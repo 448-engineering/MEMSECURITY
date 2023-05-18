@@ -8,8 +8,8 @@ keywords = ["in-memory", "security"]
 categories = ["cryptography", "memory-management"]
 edition = "2021"
 readme = "README.md"
-homepage = "https://github.com/448-engineering/448-MEM-SECURITY"
-repository = "https://github.com/448-engineering/448-MEM-SECURITY"
+homepage = "https://github.com/448-engineering/MEMSECURITY"
+repository = "https://github.com/448-engineering/MEMSECURITY"
 
 [badges]
 maintenance = { status = "passively-maintained" }
