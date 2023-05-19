@@ -1,4 +1,6 @@
 use crate::{ZeroizeArray, ZeroizeBytesArray};
+
+#[cfg(feature = "random")]
 use nanorand::{BufferedRng, ChaCha8, Rng};
 
 /// The length of XNonce type (192-bits/24-bytes).

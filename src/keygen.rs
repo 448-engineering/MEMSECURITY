@@ -26,8 +26,9 @@ mod keymaker {
         EncryptedMem, MemSecurityErr, MemSecurityResult, ZeroizeBytes, ZeroizeBytesArray,
         TAG_LENGTH,
     };
+    use bytes::BytesMut;
     use chacha20poly1305::{
-        aead::{bytes::BytesMut, AeadInPlace, KeyInit},
+        aead::{AeadInPlace, KeyInit},
         Key, XChaCha12Poly1305, XNonce,
     };
     use nanorand::{ChaCha8, Rng};
@@ -62,7 +63,7 @@ mod keymaker {
 
             let mut key = ZeroizeBytes::new_with_capacity(32);
 
-            key.set(aead::bytes::BytesMut::from(
+            key.set(BytesMut::from(
                 blake3_hasher.finalize().as_bytes().as_slice(),
             ));
 

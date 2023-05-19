@@ -1,5 +1,6 @@
-use chacha20poly1305::aead::bytes::{BufMut, BytesMut};
+use bytes::{BufMut, BytesMut};
 use core::fmt;
+#[cfg(feature = "random")]
 use nanorand::{BufferedRng, ChaCha8, Rng};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
@@ -68,6 +69,7 @@ impl<const N: usize> ZeroizeArray<N> {
     }
 
     /// Generate some random bytes and initialize an new `ZeroizeArray` in the process.
+    #[cfg(feature = "random")]
     pub fn csprng() -> Self {
         let mut buffer = [0u8; N];
         let mut rng = BufferedRng::new(ChaCha8::new());
@@ -138,6 +140,7 @@ impl<const N: usize> ZeroizeBytesArray<N> {
     }
 
     /// Generate cryptographically secure random bytes and initialize the array with these bytes returning the array.
+    #[cfg(feature = "random")]
     pub fn csprng() -> Self {
         let mut buffer = [0u8; N];
         let mut rng = BufferedRng::new(ChaCha8::new());
@@ -218,6 +221,7 @@ impl ZeroizeBytes {
 
     /// Generate some cryptographically secure random bytes and initialize the internal value of the array with these bytes
     /// returning the array.
+    #[cfg(feature = "random")]
     pub fn csprng<const BUFFER_SIZE: usize>() -> Self {
         let mut buffer = [0u8; BUFFER_SIZE];
         let mut rng = BufferedRng::new(ChaCha8::new());
