@@ -12,6 +12,8 @@ pub const TAG_LENGTH: usize = 16;
 /// The `xnonce` is a field of the XNonce is XChaCha12Poly1305.
 /// #### Its structure is:
 /// ```rust
+/// use chacha20poly1305::XNonce;
+///
 /// pub struct EncryptedMem<const N: usize> {
 ///     ciphertext: ZeroizeBytesArray<N>,
 ///     xnonce: XNonce,

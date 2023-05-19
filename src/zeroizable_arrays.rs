@@ -178,6 +178,8 @@ impl<const N: usize> ZeroizeOnDrop for ZeroizeBytesArray<N> {}
 /// This is more similar to using a `Vec` than an `array`
 /// #### Structure
 /// ```rust
+/// use chacha20poly1305::aead::bytes::BytesMut;
+///
 /// pub struct ZeroizeBytes(BytesMut);
 /// ```
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]

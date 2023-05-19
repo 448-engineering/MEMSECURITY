@@ -21,5 +21,10 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
 
+    - name: Install cargo-deny
+      run: cargo install cargo-deny
+    - name: Check licenses are correct
+      run: cargo deny check licenses
+
     - name: Run `simple.rs` example
       run: cargo run --example simple

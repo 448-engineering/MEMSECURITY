@@ -1,6 +1,5 @@
 #![forbid(unsafe_code)]
 #![forbid(missing_docs)]
-#![forbid(missing_doc_code_examples)]
 #![doc = include_str!("../README.md")]
 
 mod store;
