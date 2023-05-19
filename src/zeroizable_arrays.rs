@@ -1,4 +1,5 @@
 use chacha20poly1305::aead::bytes::{BufMut, BytesMut};
+use core::fmt;
 use nanorand::{BufferedRng, ChaCha8, Rng};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
@@ -8,7 +9,18 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 /// ```rust
 /// pub struct ZeroizeArray<const N: usize>([u8; N]);
 /// ```
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct ZeroizeArray<const N: usize>([u8; N]);
+
+impl<const N: usize> fmt::Debug for ZeroizeArray<N> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "ZeroizeArray<const N: usize>({:?})",
+            &blake3::hash(&self.0)
+        )
+    }
+}
 
 impl<const N: usize> ZeroizeArray<N> {
     /// Initialize a ZeroizeArray with the value of specified by the array of bytes
@@ -88,6 +100,9 @@ impl<const N: usize> ZeroizeOnDrop for ZeroizeArray<N> {}
 /// ```rust
 /// pub struct ZeroizeBytesArray<const N: usize>(BytesMut);
 /// ```
+///
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct ZeroizeBytesArray<const N: usize>(BytesMut);
 
 impl<const N: usize> ZeroizeBytesArray<N> {
@@ -97,7 +112,7 @@ impl<const N: usize> ZeroizeBytesArray<N> {
     }
 
     /// Set the internal value of the array to the value specified by method argument
-    pub fn set(&mut self, value: BytesMut) -> &mut Self {
+    pub fn set(mut self, value: BytesMut) -> Self {
         self.0.put(&value[..]);
 
         self
@@ -135,6 +150,16 @@ impl<const N: usize> ZeroizeBytesArray<N> {
     }
 }
 
+impl<const N: usize> fmt::Debug for ZeroizeBytesArray<N> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "ZeroizeBytesArray<const N: usize>({:?})",
+            &blake3::hash(&self.0)
+        )
+    }
+}
+
 impl<const N: usize> Zeroize for ZeroizeBytesArray<N> {
     fn zeroize(&mut self) {
         self.0.clear()
@@ -155,6 +180,7 @@ impl<const N: usize> ZeroizeOnDrop for ZeroizeBytesArray<N> {}
 /// ```rust
 /// pub struct ZeroizeBytes(BytesMut);
 /// ```
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct ZeroizeBytes(BytesMut);
 
 impl ZeroizeBytes {
@@ -199,6 +225,12 @@ impl ZeroizeBytes {
         buffer.copy_from_slice(&[0u8; BUFFER_SIZE]);
 
         ZeroizeBytes(bytes_buffer)
+    }
+}
+
+impl fmt::Debug for ZeroizeBytes {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ZeroizeBytes({:?})", &blake3::hash(&self.0))
     }
 }
 

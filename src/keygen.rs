@@ -23,8 +23,8 @@ mod keymaker {
 
     use super::{SealingKeyPages, DEFAULT_VAULT_PAGES, DEFAULT_VAULT_PAGE_SIZE};
     use crate::{
-        EncryptedMem, MemSecurityErr, MemSecurityResult, ZeroizeArray, ZeroizeBytes,
-        ZeroizeBytesArray, TAG_LENGTH,
+        EncryptedMem, MemSecurityErr, MemSecurityResult, ZeroizeBytes, ZeroizeBytesArray,
+        TAG_LENGTH,
     };
     use chacha20poly1305::{
         aead::{bytes::BytesMut, AeadInPlace, KeyInit},
@@ -71,11 +71,14 @@ mod keymaker {
 
         /// Perform encryption on the plaintext. This a plaintext as a `ZeroizeArray<N>` with the length of the specified in `N`.
         /// It encrypts the plaintext using up the `self.xnonce` as the nonce for ChaCha stream cipher.
-        pub fn encrypt(&mut self, plaintext: &ZeroizeArray<N>) -> MemSecurityResult<&mut Self> {
+        pub fn encrypt(
+            &mut self,
+            plaintext: &ZeroizeBytesArray<N>,
+        ) -> MemSecurityResult<&mut Self> {
             let cipher = XChaCha12Poly1305::new(&Key::from_slice(self.sealing_key().expose()));
 
             let mut buffer = BytesMut::with_capacity(N + TAG_LENGTH); // Note: buffer needs 16-bytes overhead for auth tag
-            buffer.extend_from_slice(plaintext.expose_borrowed());
+            buffer.extend_from_slice(plaintext.expose());
             // Encrypt `buffer` in-place, replacing the plaintext contents with ciphertext
             match cipher
                 .encrypt_in_place(
@@ -88,9 +91,7 @@ mod keymaker {
                     Err(_) => return Err(MemSecurityErr::EncryptionErr)
                 }
 
-            let mut ciphertext = ZeroizeBytesArray::with_additional_capacity(TAG_LENGTH);
-
-            ciphertext.set(buffer);
+            let ciphertext = ZeroizeBytesArray::with_additional_capacity(TAG_LENGTH).set(buffer);
 
             self.add_ciphertext(ciphertext);
 
@@ -98,7 +99,7 @@ mod keymaker {
         }
 
         /// Decrypts the `self.ciphertext` using the `self.nonce`
-        pub fn decrypt(&mut self) -> MemSecurityResult<BytesMut> {
+        pub fn decrypt(&mut self) -> MemSecurityResult<ZeroizeBytesArray<N>> {
             let cipher = XChaCha12Poly1305::new(&Key::from_slice(self.sealing_key().expose()));
 
             let mut buffer = BytesMut::with_capacity(N + TAG_LENGTH); // Note: buffer needs 16-bytes overhead for auth tag
@@ -110,7 +111,7 @@ mod keymaker {
                 b"",
                 &mut buffer,
             ) {
-                Ok(_) => Ok(buffer),
+                Ok(_) => Ok(ZeroizeBytesArray::new().set(buffer)),
                 Err(_) => {
                     buffer.fill(0); // Zero out the partially decrypted plaintext
                     drop(buffer); // Drop the partially leaked plaintext
