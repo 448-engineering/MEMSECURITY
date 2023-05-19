@@ -97,7 +97,10 @@ impl<const N: usize> ZeroizeOnDrop for ZeroizeArray<N> {}
 
 /// This is an array of variable length bytes that can be zeroed out on drop.
 /// #### Structure
+///
 /// ```rust
+/// use chacha20poly1305::aead::bytes::BytesMut;
+///
 /// pub struct ZeroizeBytesArray<const N: usize>(BytesMut);
 /// ```
 ///

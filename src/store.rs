@@ -13,6 +13,7 @@ pub const TAG_LENGTH: usize = 16;
 /// #### Its structure is:
 /// ```rust
 /// use chacha20poly1305::XNonce;
+/// use memsecurity::ZeroizeBytesArray;
 ///
 /// pub struct EncryptedMem<const N: usize> {
 ///     ciphertext: ZeroizeBytesArray<N>,
