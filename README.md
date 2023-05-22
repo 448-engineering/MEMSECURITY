@@ -1,6 +1,6 @@
 # MEMSECURITY
 
-[![Rust](https://github.com/448-engineering/MEMSECURITY/actions/workflows/rust.yml/badge.svg?branch=master)](https://github.com/448-engineering/MEMSECURITY/actions/workflows/rust.yml)  ![crates.io](https://img.shields.io/crates/v/memsecurity.svg)
+[![Rust](https://github.com/448-engineering/MEMSECURITY/actions/workflows/rust.yml/badge.svg?branch=master)](https://github.com/448-engineering/MEMSECURITY/actions/workflows/rust.yml)  ![crates.io](https://img.shields.io/crates/v/memsecurity.svg)[![Docs](https://docs.rs/memsecurity/badge.svg)](https://docs.rs/memsecurity)
 
 
 Securely hold secrets in memory and protect them against cross-protection-boundary readout via microarchitectural, via attacks on physical layout, and via coldboot attacks.
