@@ -116,8 +116,24 @@ impl<const N: usize> ZeroizeBytesArray<N> {
         ZeroizeBytesArray(BytesMut::with_capacity(N))
     }
 
+    /// Initialize the array and set the internal value of the array to the value specified by method argument
+    pub fn new_with_data(value: [u8; N]) -> Self {
+        let mut value_bytes = BytesMut::with_capacity(N);
+
+        value_bytes.put(&value[..]);
+
+        ZeroizeBytesArray(value_bytes)
+    }
+
     /// Set the internal value of the array to the value specified by method argument
-    pub fn set(mut self, value: BytesMut) -> Self {
+    pub fn set(mut self, value: [u8; N]) -> Self {
+        self.0.put(&value[..]);
+
+        self
+    }
+
+    /// Set the internal value of the array to the value specified by method argument value which is a `BytesMut`
+    pub fn set_bytes_mut(mut self, value: BytesMut) -> Self {
         self.0.put(&value[..]);
 
         self
@@ -195,6 +211,21 @@ impl ZeroizeBytes {
     /// Create a new array with no allocation and no specified capacity
     pub fn new() -> Self {
         ZeroizeBytes(BytesMut::new())
+    }
+
+    /// Initialize the array and set the internal value of the array to the value specified by method argument
+    pub fn new_with_data(value: &[u8]) -> Self {
+        let mut value_bytes = BytesMut::new();
+        value_bytes.put(&value[..]);
+
+        ZeroizeBytes(value_bytes)
+    }
+
+    /// Set the internal value of the array to the value specified by method argument value which is a `BytesMut`
+    pub fn set_bytes_mut(mut self, value: BytesMut) -> Self {
+        self.0.put(&value[..]);
+
+        self
     }
 
     /// Sets the internal value to the new value

@@ -92,7 +92,8 @@ mod keymaker {
                     Err(_) => return Err(MemSecurityErr::EncryptionErr)
                 }
 
-            let ciphertext = ZeroizeBytesArray::with_additional_capacity(TAG_LENGTH).set(buffer);
+            let ciphertext =
+                ZeroizeBytesArray::with_additional_capacity(TAG_LENGTH).set_bytes_mut(buffer);
 
             self.add_ciphertext(ciphertext);
 
@@ -112,7 +113,7 @@ mod keymaker {
                 b"",
                 &mut buffer,
             ) {
-                Ok(_) => Ok(ZeroizeBytesArray::new().set(buffer)),
+                Ok(_) => Ok(ZeroizeBytesArray::new().set_bytes_mut(buffer)),
                 Err(_) => {
                     buffer.fill(0); // Zero out the partially decrypted plaintext
                     drop(buffer); // Drop the partially leaked plaintext
