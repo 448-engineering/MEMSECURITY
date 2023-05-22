@@ -201,6 +201,13 @@ impl<const N: usize> ZeroizeBytesArray<N> {
         self
     }
 
+    /// Add the byte the internal value
+    pub fn set_byte(&mut self, value: u8) -> &mut Self {
+        self.0.put_u8(value);
+
+        self
+    }
+
     /// Set the internal value of the array to the value specified by method argument value which is a `BytesMut`
     pub fn set_bytes_mut(mut self, value: BytesMut) -> Self {
         self.0.put(&value[..]);
@@ -302,6 +309,13 @@ impl ZeroizeBytes {
         let mut container = BytesMut::new();
         container.put(value);
         self.0 = container;
+
+        self
+    }
+
+    /// Add the byte the internal value
+    pub fn set_byte(&mut self, value: u8) -> &mut Self {
+        self.0.put_u8(value);
 
         self
     }
