@@ -291,15 +291,17 @@ impl ZeroizeBytes {
     }
 
     /// Set the internal value of the array to the value specified by method argument value which is a `BytesMut`
-    pub fn set_bytes_mut(mut self, value: BytesMut) -> Self {
+    pub fn set_bytes_mut(&mut self, value: BytesMut) -> &mut Self {
         self.0.put(&value[..]);
 
         self
     }
 
     /// Sets the internal value to the new value
-    pub fn set(&mut self, value: BytesMut) -> &mut Self {
-        self.0.put(&value[..]);
+    pub fn set(&mut self, value: &[u8]) -> &mut Self {
+        let mut container = BytesMut::new();
+        container.put(value);
+        self.0 = container;
 
         self
     }

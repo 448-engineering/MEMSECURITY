@@ -63,7 +63,7 @@ mod keymaker {
 
             let mut key = ZeroizeBytes::new_with_capacity(32);
 
-            key.set(BytesMut::from(
+            key.set_bytes_mut(BytesMut::from(
                 blake3_hasher.finalize().as_bytes().as_slice(),
             ));
 
