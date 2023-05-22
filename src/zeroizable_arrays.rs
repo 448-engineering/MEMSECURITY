@@ -4,6 +4,75 @@ use core::fmt;
 use nanorand::{BufferedRng, ChaCha8, Rng};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
+/// This a byte that is zeroed out when dropped from memory.
+/// #### Structure
+/// ```rust
+/// pub struct ZeroizeByte(u8);
+/// ```
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+pub struct ZeroizeByte(u8);
+
+impl ZeroizeByte {
+    /// Initialize a ZeroizeByte with the value of specified by byte
+    pub fn new(value: u8) -> Self {
+        ZeroizeByte(value)
+    }
+
+    /// Initialize a new byte which is zeroed byte
+    pub fn new_zeroed() -> Self {
+        ZeroizeByte(0u8)
+    }
+
+    /// File the current array with new values specified by the method parameter `value: u8`
+    pub fn set(&mut self, value: u8) -> &mut Self {
+        self.0 = value;
+
+        self
+    }
+
+    /// Expose the internal as an owned byte
+    pub fn expose(&self) -> u8 {
+        self.0
+    }
+
+    /// Expose the internal as an borrowed byte
+    pub fn expose_borrowed(&self) -> &u8 {
+        &self.0
+    }
+
+    /// Clone the array
+    pub fn clone(&self) -> ZeroizeByte {
+        Self(self.0)
+    }
+
+    /// Own this array
+    pub fn own(self) -> Self {
+        self
+    }
+
+    /// Generate some random byte and initialize an new `ZeroizeByte` in the process.
+    #[cfg(feature = "random")]
+    pub fn csprng() -> Self {
+        let mut rng = ChaCha8::new();
+
+        ZeroizeByte(rng.generate::<u8>())
+    }
+}
+
+impl Zeroize for ZeroizeByte {
+    fn zeroize(&mut self) {
+        self.0 = 0;
+    }
+}
+
+impl Drop for ZeroizeByte {
+    fn drop(&mut self) {
+        self.zeroize()
+    }
+}
+
+impl ZeroizeOnDrop for ZeroizeByte {}
+
 /// This is a array whose size is specified as a const generic `N` and can be zeroed out when dropped from memory.
 /// This array is useful when specifying fixed size bytes like passwords which need to be zeroed out from memory before being dropped.
 /// #### Structure
