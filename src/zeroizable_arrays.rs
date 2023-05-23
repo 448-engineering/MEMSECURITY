@@ -427,6 +427,23 @@ impl<const N: usize, T: fmt::Debug + ToBlake3Hash> PartialEq for ZeroizeArrayVec
     }
 }
 
+impl<const N: usize, T: fmt::Debug + ToBlake3Hash> fmt::Debug for ZeroizeArrayVec<N, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut value = blake3::Hasher::new();
+        self.0.iter().for_each(|inner| {
+            value.update(inner.hash().as_bytes());
+        });
+
+        let outcome = value.finalize();
+
+        write!(
+            f,
+            "ZeroizeArrayVec<const N: usize, T: fmt::Debug + ToBlake3Hash>({:?})",
+            outcome
+        )
+    }
+}
+
 impl<const N: usize, T: fmt::Debug + ToBlake3Hash> Eq for ZeroizeArrayVec<N, T> {}
 
 impl<const N: usize, T: fmt::Debug + ToBlake3Hash> ZeroizeArrayVec<N, T>
@@ -496,8 +513,6 @@ impl<const N: usize, T: fmt::Debug + ToBlake3Hash> Drop for ZeroizeArrayVec<N, T
 }
 
 impl<const N: usize, T: fmt::Debug + ToBlake3Hash> ZeroizeOnDrop for ZeroizeArrayVec<N, T> {}
-
-/********************* */
 
 /// This is an ArrayVec of bytes whose size is specified as a const generic `N` and can be zeroed out when dropped from memory.
 /// This array is useful when specifying fixed size bytes like passwords which need to be zeroed out from memory before being dropped.
@@ -580,3 +595,13 @@ impl<const N: usize> Drop for ZeroizeArrayVecBytes<N> {
 }
 
 impl<const N: usize> ZeroizeOnDrop for ZeroizeArrayVecBytes<N> {}
+
+impl<const N: usize> fmt::Debug for ZeroizeArrayVecBytes<N> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "ZeroizeArrayVecBytes<const N: usize>({:?})",
+            blake3::hash(&self.0)
+        )
+    }
+}
