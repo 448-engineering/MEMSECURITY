@@ -1,4 +1,4 @@
-use crate::ZeroizeArray;
+use crate::{ToBlake3Hash, ZeroizeArray};
 
 /// The 32 bytes of a Blake3 Hash
 pub type Blake3Hash = ZeroizeArray<32>;
@@ -28,3 +28,51 @@ pub type Key32Byte = ZeroizeArray<32>;
 pub type Poly1305Tag = ZeroizeArray<16>;
 /// The  bytes of a Tai64N timestamp
 pub type TaiTimestamp = ZeroizeArray<12>;
+
+impl ToBlake3Hash for ZeroizeArray<8> {
+    fn hash(&self) -> blake3::Hash {
+        blake3::hash(self.expose_borrowed())
+    }
+}
+
+impl ToBlake3Hash for ZeroizeArray<12> {
+    fn hash(&self) -> blake3::Hash {
+        blake3::hash(self.expose_borrowed())
+    }
+}
+
+impl ToBlake3Hash for ZeroizeArray<16> {
+    fn hash(&self) -> blake3::Hash {
+        blake3::hash(self.expose_borrowed())
+    }
+}
+
+impl ToBlake3Hash for ZeroizeArray<24> {
+    fn hash(&self) -> blake3::Hash {
+        blake3::hash(self.expose_borrowed())
+    }
+}
+
+impl ToBlake3Hash for ZeroizeArray<32> {
+    fn hash(&self) -> blake3::Hash {
+        blake3::hash(self.expose_borrowed())
+    }
+}
+
+impl ToBlake3Hash for ZeroizeArray<64> {
+    fn hash(&self) -> blake3::Hash {
+        blake3::hash(self.expose_borrowed())
+    }
+}
+
+impl ToBlake3Hash for ZeroizeArray<96> {
+    fn hash(&self) -> blake3::Hash {
+        blake3::hash(self.expose_borrowed())
+    }
+}
+
+impl ToBlake3Hash for ZeroizeArray<128> {
+    fn hash(&self) -> blake3::Hash {
+        blake3::hash(self.expose_borrowed())
+    }
+}
