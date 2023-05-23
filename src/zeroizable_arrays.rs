@@ -5,12 +5,14 @@ use core::fmt;
 use nanorand::{BufferedRng, ChaCha8, Rng};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
+use crate::ToBlake3Hash;
+
 /// This a byte that is zeroed out when dropped from memory.
 /// #### Structure
 /// ```rust
 /// pub struct ZeroizeByte(u8);
 /// ```
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug)]
 pub struct ZeroizeByte(u8);
 
 impl ZeroizeByte {
@@ -60,6 +62,14 @@ impl ZeroizeByte {
     }
 }
 
+impl PartialEq for ZeroizeByte {
+    fn eq(&self, other: &Self) -> bool {
+        blake3::hash(&self.0.to_le_bytes()) == blake3::hash(&other.0.to_le_bytes())
+    }
+}
+
+impl Eq for ZeroizeByte {}
+
 impl Zeroize for ZeroizeByte {
     fn zeroize(&mut self) {
         self.0 = 0;
@@ -80,7 +90,6 @@ impl ZeroizeOnDrop for ZeroizeByte {}
 /// ```rust
 /// pub struct ZeroizeArray<const N: usize>([u8; N]);
 /// ```
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct ZeroizeArray<const N: usize>([u8; N]);
 
 impl<const N: usize> fmt::Debug for ZeroizeArray<N> {
@@ -92,6 +101,14 @@ impl<const N: usize> fmt::Debug for ZeroizeArray<N> {
         )
     }
 }
+
+impl<const N: usize> PartialEq for ZeroizeArray<N> {
+    fn eq(&self, other: &Self) -> bool {
+        blake3::hash(&self.0) == blake3::hash(&other.0)
+    }
+}
+
+impl<const N: usize> Eq for ZeroizeArray<N> {}
 
 impl<const N: usize> ZeroizeArray<N> {
     /// Initialize a ZeroizeArray with the value of specified by the array of bytes
@@ -177,8 +194,15 @@ impl<const N: usize> ZeroizeOnDrop for ZeroizeArray<N> {}
 /// ```
 ///
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct ZeroizeBytesArray<const N: usize>(BytesMut);
+
+impl<const N: usize> PartialEq for ZeroizeBytesArray<N> {
+    fn eq(&self, other: &Self) -> bool {
+        blake3::hash(&self.0) == blake3::hash(&other.0)
+    }
+}
+
+impl<const N: usize> Eq for ZeroizeBytesArray<N> {}
 
 impl<const N: usize> ZeroizeBytesArray<N> {
     /// Initialize the array with an initial length of `N`
@@ -281,8 +305,15 @@ impl<const N: usize> ZeroizeOnDrop for ZeroizeBytesArray<N> {}
 ///
 /// pub struct ZeroizeBytes(BytesMut);
 /// ```
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct ZeroizeBytes(BytesMut);
+
+impl PartialEq for ZeroizeBytes {
+    fn eq(&self, other: &Self) -> bool {
+        blake3::hash(&self.0) == blake3::hash(&other.0)
+    }
+}
+
+impl Eq for ZeroizeBytes {}
 
 impl ZeroizeBytes {
     /// Create a new array with no allocation and no specified capacity
@@ -380,10 +411,23 @@ impl ZeroizeOnDrop for ZeroizeBytes {}
 /// ```rust
 /// pub struct ZeroizeArrayVec<const N: usize, T>(ArrayVec<T, N>);
 /// ```
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct ZeroizeArrayVec<const N: usize, T: fmt::Debug>(ArrayVec<T, N>);
+pub struct ZeroizeArrayVec<const N: usize, T: fmt::Debug + ToBlake3Hash>(ArrayVec<T, N>);
 
-impl<const N: usize, T: fmt::Debug> ZeroizeArrayVec<N, T>
+impl<const N: usize, T: fmt::Debug + ToBlake3Hash> PartialEq for ZeroizeArrayVec<N, T> {
+    fn eq(&self, other: &Self) -> bool {
+        for (index, value) in self.0.iter().enumerate() {
+            if value.hash() != other.0[index].hash() {
+                return false;
+            }
+        }
+
+        true
+    }
+}
+
+impl<const N: usize, T: fmt::Debug + ToBlake3Hash> Eq for ZeroizeArrayVec<N, T> {}
+
+impl<const N: usize, T: fmt::Debug + ToBlake3Hash> ZeroizeArrayVec<N, T>
 where
     T: core::marker::Copy,
 {
@@ -437,16 +481,99 @@ where
     }
 }
 
-impl<const N: usize, T: fmt::Debug> Zeroize for ZeroizeArrayVec<N, T> {
+impl<const N: usize, T: fmt::Debug + ToBlake3Hash> Zeroize for ZeroizeArrayVec<N, T> {
     fn zeroize(&mut self) {
         self.0.clear()
     }
 }
 
-impl<const N: usize, T: fmt::Debug> Drop for ZeroizeArrayVec<N, T> {
+impl<const N: usize, T: fmt::Debug + ToBlake3Hash> Drop for ZeroizeArrayVec<N, T> {
     fn drop(&mut self) {
         self.zeroize()
     }
 }
 
-impl<const N: usize, T: fmt::Debug> ZeroizeOnDrop for ZeroizeArrayVec<N, T> {}
+impl<const N: usize, T: fmt::Debug + ToBlake3Hash> ZeroizeOnDrop for ZeroizeArrayVec<N, T> {}
+
+/********************* */
+
+/// This is an ArrayVec of bytes whose size is specified as a const generic `N` and can be zeroed out when dropped from memory.
+/// This array is useful when specifying fixed size bytes like passwords which need to be zeroed out from memory before being dropped.
+/// #### Structure
+/// ```rust
+/// pub struct ZeroizeArrayVecBytes<const N: usize>(ArrayVec<u8, N>);
+/// ```
+pub struct ZeroizeArrayVecBytes<const N: usize>(ArrayVec<u8, N>);
+
+impl<const N: usize> PartialEq for ZeroizeArrayVecBytes<N> {
+    fn eq(&self, other: &Self) -> bool {
+        blake3::hash(&self.0) == blake3::hash(&other.0)
+    }
+}
+
+impl<const N: usize> Eq for ZeroizeArrayVecBytes<N> {}
+
+impl<const N: usize> ZeroizeArrayVecBytes<N> {
+    /// Initialize a ZeroizeArray with the value of specified by the array of bytes
+    pub fn new() -> Self {
+        ZeroizeArrayVecBytes(ArrayVec::<u8, N>::new())
+    }
+
+    /// Initialize a ZeroizeArray with the value of specified by the array of bytes
+    pub fn new_with(value: [u8; N]) -> Self {
+        let mut outcome = ArrayVec::<u8, N>::new();
+        outcome.try_extend_from_slice(&value).unwrap(); // Should never fail due to const size constraints
+
+        ZeroizeArrayVecBytes(outcome)
+    }
+
+    /// File the current array with new values specified by the method parameter `value: [u8; N]`
+    pub fn fill_from_slice(&mut self, value: [u8; N]) -> &mut Self {
+        self.0.try_extend_from_slice(&value).unwrap(); // Should never fail due to const size constraints
+
+        self
+    }
+
+    /// Expose the internal as an owned array
+    pub fn expose(&self) -> ArrayVec<u8, N> {
+        self.0.clone()
+    }
+
+    /// Expose the internal as an borrowed array
+    pub fn expose_borrowed(&self) -> &ArrayVec<u8, N> {
+        &self.0
+    }
+
+    /// Own this array
+    pub fn own(self) -> Self {
+        self
+    }
+
+    /// Insert a value in the array after the last index
+    pub fn push(&mut self, value: u8) -> &mut Self {
+        self.0.push(value);
+
+        self
+    }
+
+    /// Insert a value at index specified in the array
+    pub fn insert(&mut self, index: usize, value: u8) -> &mut Self {
+        self.0.insert(index, value);
+
+        self
+    }
+}
+
+impl<const N: usize> Zeroize for ZeroizeArrayVecBytes<N> {
+    fn zeroize(&mut self) {
+        self.0.clear()
+    }
+}
+
+impl<const N: usize> Drop for ZeroizeArrayVecBytes<N> {
+    fn drop(&mut self) {
+        self.zeroize()
+    }
+}
+
+impl<const N: usize> ZeroizeOnDrop for ZeroizeArrayVecBytes<N> {}

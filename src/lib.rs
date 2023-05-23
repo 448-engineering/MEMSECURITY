@@ -2,7 +2,9 @@
 #![forbid(missing_docs)]
 #![doc = include_str!("../README.md")]
 
+#[cfg(feature = "symm_asymm")]
 mod cryptography_structures;
+#[cfg(feature = "symm_asymm")]
 pub use cryptography_structures::*;
 
 #[cfg(feature = "encryption")]

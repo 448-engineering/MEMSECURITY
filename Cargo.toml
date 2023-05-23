@@ -1,6 +1,6 @@
 [package]
 name = "memsecurity"
-version = "1.2.2"
+version = "1.3.0"
 authors = ["448 ENGINEERING DESIGN DEVELOPERS <superuser@448.africa>"]
 license = "Apache-2.0 OR MIT"
 description = "Securely hold secrets in memory and protect them against cross-protection-boundary readout via microarchitectural, via attacks on physical layout, and via coldboot attacks."
@@ -33,9 +33,10 @@ nanorand = { version = "0.7.0", features = [
 zeroize = { version = "1.5.7", default-features = false }
 
 [features]
-default = []
+default = ["symm_asymm"]
 encryption = ["dep:aead", "dep:chacha20poly1305", "dep:lazy_static", "random"]
 random = ["dep:nanorand"]
+symm_asymm = []
 
 
 [profile.dev]

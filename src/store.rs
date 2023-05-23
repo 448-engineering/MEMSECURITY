@@ -23,7 +23,7 @@ pub const TAG_LENGTH: usize = 16;
 ///  }   
 /// ```
 ///
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct EncryptedMem<const N: usize> {
     ciphertext: ZeroizeBytesArray<N>,
     xnonce: ZeroizeArray<XNONCE_LENGTH>,
