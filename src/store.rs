@@ -83,7 +83,19 @@ impl<const N: usize> EncryptedMem<N> {
     }
 
     /// Expose `XNonce`
-    pub fn xnonce(&self) -> ZeroizeArray<XNONCE_LENGTH> {
+    pub fn xnonce(&self) -> &ZeroizeArray<XNONCE_LENGTH> {
+        &self.xnonce
+    }
+
+    /// Expose `XNonce`
+    #[cfg(feature = "clonable_mem")]
+    pub fn xnonce_clone(&self) -> ZeroizeArray<XNONCE_LENGTH> {
         self.xnonce.clone()
+    }
+
+    /// Expose `XNonce`
+    #[cfg(feature = "clonable_mem")]
+    pub fn ciphertext_clone(&self) -> ZeroizeBytesArray<N> {
+        self.ciphertext.clone()
     }
 }

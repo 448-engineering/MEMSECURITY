@@ -76,10 +76,11 @@ mod keymaker {
             &mut self,
             plaintext: &ZeroizeBytesArray<N>,
         ) -> MemSecurityResult<&mut Self> {
-            let cipher = XChaCha12Poly1305::new(&Key::from_slice(self.sealing_key().expose()));
+            let cipher =
+                XChaCha12Poly1305::new(&Key::from_slice(self.sealing_key().expose_borrowed()));
 
             let mut buffer = BytesMut::with_capacity(N + TAG_LENGTH); // Note: buffer needs 16-bytes overhead for auth tag
-            buffer.extend_from_slice(plaintext.expose());
+            buffer.extend_from_slice(plaintext.expose_borrowed());
             // Encrypt `buffer` in-place, replacing the plaintext contents with ciphertext
             match cipher
                 .encrypt_in_place(
@@ -102,10 +103,11 @@ mod keymaker {
 
         /// Decrypts the `self.ciphertext` using the `self.nonce`
         pub fn decrypt(&mut self) -> MemSecurityResult<ZeroizeBytesArray<N>> {
-            let cipher = XChaCha12Poly1305::new(&Key::from_slice(self.sealing_key().expose()));
+            let cipher =
+                XChaCha12Poly1305::new(&Key::from_slice(self.sealing_key().expose_borrowed()));
 
             let mut buffer = BytesMut::with_capacity(N + TAG_LENGTH); // Note: buffer needs 16-bytes overhead for auth tag
-            buffer.extend_from_slice(self.ciphertext().expose());
+            buffer.extend_from_slice(self.ciphertext().expose_borrowed());
 
             // Decrypt `buffer` in-place, replacing its ciphertext context with the original plaintext
             match cipher.decrypt_in_place(

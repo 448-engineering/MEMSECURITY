@@ -34,7 +34,8 @@ impl ZeroizeByte {
     }
 
     /// Expose the internal as an owned byte
-    pub fn expose(&self) -> u8 {
+    #[cfg(feature = "clonable_mem")]
+    pub fn expose_owned(&self) -> u8 {
         self.0
     }
 
@@ -44,6 +45,7 @@ impl ZeroizeByte {
     }
 
     /// Clone the array
+    #[cfg(feature = "clonable_mem")]
     pub fn clone(&self) -> ZeroizeByte {
         Self(self.0)
     }
@@ -129,7 +131,8 @@ impl<const N: usize> ZeroizeArray<N> {
     }
 
     /// Expose the internal as an owned array
-    pub fn expose(&self) -> [u8; N] {
+    #[cfg(feature = "clonable_mem")]
+    pub fn expose_owned(&self) -> [u8; N] {
         self.0
     }
 
@@ -139,6 +142,7 @@ impl<const N: usize> ZeroizeArray<N> {
     }
 
     /// Clone the array
+    #[cfg(feature = "clonable_mem")]
     pub fn clone(&self) -> ZeroizeArray<N> {
         Self(self.0)
     }
@@ -247,11 +251,12 @@ impl<const N: usize> ZeroizeBytesArray<N> {
     }
 
     /// Expose the internal value of the array
-    pub fn expose(&self) -> &BytesMut {
+    pub fn expose_borrowed(&self) -> &BytesMut {
         &self.0
     }
 
     /// Clone the array
+    #[cfg(feature = "clonable_mem")]
     pub fn clone(&self) -> ZeroizeBytesArray<N> {
         Self(self.0.clone())
     }
@@ -358,11 +363,12 @@ impl ZeroizeBytes {
     }
 
     /// Expose the internal value
-    pub fn expose(&self) -> &BytesMut {
+    pub fn expose_borrowed(&self) -> &BytesMut {
         &self.0
     }
 
     /// Clone the array
+    #[cfg(feature = "clonable_mem")]
     pub fn clone(&self) -> ZeroizeBytes {
         Self(self.0.clone())
     }
@@ -471,13 +477,20 @@ where
     }
 
     /// Expose the internal as an owned array
-    pub fn expose(&self) -> ArrayVec<T, N> {
+    #[cfg(feature = "clonable_mem")]
+    pub fn expose_owned(&self) -> ArrayVec<T, N> {
         self.0.clone()
     }
 
     /// Expose the internal as an borrowed array
     pub fn expose_borrowed(&self) -> &ArrayVec<T, N> {
         &self.0
+    }
+
+    /// Expose the internal as an owned array
+    #[cfg(feature = "clonable_mem")]
+    pub fn clone(&self) -> ZeroizeArrayVec<N, T> {
+        Self(self.0.clone())
     }
 
     /// Own this array
@@ -553,13 +566,20 @@ impl<const N: usize> ZeroizeArrayVecBytes<N> {
     }
 
     /// Expose the internal as an owned array
-    pub fn expose(&self) -> ArrayVec<u8, N> {
+    #[cfg(feature = "clonable_mem")]
+    pub fn expose_owned(&self) -> ArrayVec<u8, N> {
         self.0.clone()
     }
 
     /// Expose the internal as an borrowed array
     pub fn expose_borrowed(&self) -> &ArrayVec<u8, N> {
         &self.0
+    }
+
+    /// Expose the internal as an owned array
+    #[cfg(feature = "clonable_mem")]
+    pub fn clone(&self) -> ZeroizeArrayVecBytes<N> {
+        Self(self.0.clone())
     }
 
     /// Own this array
