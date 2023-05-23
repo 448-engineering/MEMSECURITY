@@ -409,6 +409,8 @@ impl ZeroizeOnDrop for ZeroizeBytes {}
 /// This array is useful when specifying fixed size bytes like passwords which need to be zeroed out from memory before being dropped.
 /// #### Structure
 /// ```rust
+/// use arrayvec::ArrayVec;
+///
 /// pub struct ZeroizeArrayVec<const N: usize, T>(ArrayVec<T, N>);
 /// ```
 pub struct ZeroizeArrayVec<const N: usize, T: fmt::Debug + ToBlake3Hash>(ArrayVec<T, N>);
@@ -501,6 +503,7 @@ impl<const N: usize, T: fmt::Debug + ToBlake3Hash> ZeroizeOnDrop for ZeroizeArra
 /// This array is useful when specifying fixed size bytes like passwords which need to be zeroed out from memory before being dropped.
 /// #### Structure
 /// ```rust
+/// use arrayvec::ArrayVec;
 /// pub struct ZeroizeArrayVecBytes<const N: usize>(ArrayVec<u8, N>);
 /// ```
 pub struct ZeroizeArrayVecBytes<const N: usize>(ArrayVec<u8, N>);
