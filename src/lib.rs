@@ -36,6 +36,7 @@ pub use blake3;
 pub use bytes;
 #[cfg(feature = "encryption")]
 pub use chacha20poly1305;
+#[cfg(feature = "encryption")]
 pub use lazy_static;
 #[cfg(feature = "random")]
 pub use nanorand;
