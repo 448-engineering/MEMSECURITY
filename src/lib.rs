@@ -2,6 +2,9 @@
 #![forbid(missing_docs)]
 #![doc = include_str!("../README.md")]
 
+mod cryptography_structures;
+pub use cryptography_structures::*;
+
 #[cfg(feature = "encryption")]
 mod store;
 #[cfg(feature = "encryption")]
@@ -19,6 +22,22 @@ pub use zeroizable_arrays::*;
 mod errors;
 #[cfg(feature = "encryption")]
 pub use errors::*;
+
+mod traits;
+pub use traits::*;
+
+/// Re-export  crates
+#[cfg(feature = "encryption")]
+pub use aead;
+pub use arrayvec;
+pub use blake3;
+pub use bytes;
+#[cfg(feature = "encryption")]
+pub use chacha20poly1305;
+pub use lazy_static;
+#[cfg(feature = "random")]
+pub use nanorand;
+pub use zeroize;
 
 // TODO Test different nonces
 // TODO Test different cipher and plaintext

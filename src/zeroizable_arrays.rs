@@ -1,3 +1,4 @@
+use arrayvec::ArrayVec;
 use bytes::{BufMut, BytesMut};
 use core::fmt;
 #[cfg(feature = "random")]
@@ -372,3 +373,80 @@ impl Drop for ZeroizeBytes {
 }
 
 impl ZeroizeOnDrop for ZeroizeBytes {}
+
+/// This is an ArrayVec whose size is specified as a const generic `N` and can be zeroed out when dropped from memory.
+/// This array is useful when specifying fixed size bytes like passwords which need to be zeroed out from memory before being dropped.
+/// #### Structure
+/// ```rust
+/// pub struct ZeroizeArrayVec<const N: usize, T>(ArrayVec<T, N>);
+/// ```
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
+pub struct ZeroizeArrayVec<const N: usize, T: fmt::Debug>(ArrayVec<T, N>);
+
+impl<const N: usize, T: fmt::Debug> ZeroizeArrayVec<N, T>
+where
+    T: core::marker::Copy,
+{
+    /// Initialize a ZeroizeArray with the value of specified by the array of bytes
+    pub fn new() -> Self {
+        ZeroizeArrayVec(ArrayVec::<T, N>::new())
+    }
+
+    /// Initialize a ZeroizeArray with the value of specified by the array of bytes
+    pub fn new_with(value: [T; N]) -> Self {
+        let mut outcome = ArrayVec::<T, N>::new();
+        outcome.try_extend_from_slice(&value).unwrap(); // Should never fail due to const size constraints
+
+        ZeroizeArrayVec(outcome)
+    }
+
+    /// File the current array with new values specified by the method parameter `value: [u8; N]`
+    pub fn fill_from_slice(&mut self, value: [T; N]) -> &mut Self {
+        self.0.try_extend_from_slice(&value).unwrap(); // Should never fail due to const size constraints
+
+        self
+    }
+
+    /// Expose the internal as an owned array
+    pub fn expose(&self) -> ArrayVec<T, N> {
+        self.0.clone()
+    }
+
+    /// Expose the internal as an borrowed array
+    pub fn expose_borrowed(&self) -> &ArrayVec<T, N> {
+        &self.0
+    }
+
+    /// Own this array
+    pub fn own(self) -> Self {
+        self
+    }
+
+    /// Insert a value in the array after the last index
+    pub fn push(&mut self, value: T) -> &mut Self {
+        self.0.push(value);
+
+        self
+    }
+
+    /// Insert a value at index specified in the array
+    pub fn insert(&mut self, index: usize, value: T) -> &mut Self {
+        self.0.insert(index, value);
+
+        self
+    }
+}
+
+impl<const N: usize, T: fmt::Debug> Zeroize for ZeroizeArrayVec<N, T> {
+    fn zeroize(&mut self) {
+        self.0.clear()
+    }
+}
+
+impl<const N: usize, T: fmt::Debug> Drop for ZeroizeArrayVec<N, T> {
+    fn drop(&mut self) {
+        self.zeroize()
+    }
+}
+
+impl<const N: usize, T: fmt::Debug> ZeroizeOnDrop for ZeroizeArrayVec<N, T> {}
