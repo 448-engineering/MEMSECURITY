@@ -1,11 +1,8 @@
+use crate::{CsprngArray, ToBlake3Hash};
 use arrayvec::ArrayVec;
 use bytes::{BufMut, BytesMut};
 use core::fmt;
-#[cfg(feature = "random")]
-use nanorand::{BufferedRng, ChaCha8, Rng};
 use zeroize::{Zeroize, ZeroizeOnDrop};
-
-use crate::ToBlake3Hash;
 
 /// This a byte that is zeroed out when dropped from memory.
 /// #### Structure
@@ -58,9 +55,9 @@ impl ZeroizeByte {
     /// Generate some random byte and initialize an new `ZeroizeByte` in the process.
     #[cfg(feature = "random")]
     pub fn csprng() -> Self {
-        let mut rng = ChaCha8::new();
+        use crate::CsprngArraySimple;
 
-        ZeroizeByte(rng.generate::<u8>())
+        ZeroizeByte(CsprngArraySimple::gen_u8_byte())
     }
 }
 
@@ -158,20 +155,6 @@ impl<const N: usize> ZeroizeArray<N> {
 
         self
     }
-
-    /// Generate some random bytes and initialize an new `ZeroizeArray` in the process.
-    #[cfg(feature = "random")]
-    pub fn csprng() -> Self {
-        let mut buffer = [0u8; N];
-        let mut rng = BufferedRng::new(ChaCha8::new());
-        rng.fill(&mut buffer);
-
-        let csprng = ZeroizeArray(buffer);
-
-        buffer.copy_from_slice(&[0u8; N]);
-
-        csprng
-    }
 }
 
 impl<const N: usize> Zeroize for ZeroizeArray<N> {
@@ -223,6 +206,19 @@ impl<const N: usize> ZeroizeBytesArray<N> {
         ZeroizeBytesArray(value_bytes)
     }
 
+    /// Initialize the array and set the internal value of the array to the value specified by method argument
+    pub fn new_with_csprng() -> Self {
+        let mut value_bytes = BytesMut::with_capacity(N);
+
+        let mut value = CsprngArray::<N>::gen();
+
+        value_bytes.put(&value.expose()[..]);
+
+        value.zeroize();
+
+        ZeroizeBytesArray(value_bytes)
+    }
+
     /// Set the internal value of the array to the value specified by method argument
     pub fn set(mut self, value: [u8; N]) -> Self {
         self.0.put(&value[..]);
@@ -259,22 +255,6 @@ impl<const N: usize> ZeroizeBytesArray<N> {
     #[cfg(feature = "clonable_mem")]
     pub fn clone(&self) -> ZeroizeBytesArray<N> {
         Self(self.0.clone())
-    }
-
-    /// Generate cryptographically secure random bytes and initialize the array with these bytes returning the array.
-    #[cfg(feature = "random")]
-    pub fn csprng() -> Self {
-        let mut buffer = [0u8; N];
-        let mut rng = BufferedRng::new(ChaCha8::new());
-        rng.fill(&mut buffer);
-
-        let mut bytes_buffer = BytesMut::with_capacity(N);
-
-        bytes_buffer.put(&buffer[..]);
-
-        buffer.copy_from_slice(&[0u8; N]);
-
-        ZeroizeBytesArray(bytes_buffer)
     }
 }
 
@@ -371,23 +351,6 @@ impl ZeroizeBytes {
     #[cfg(feature = "clonable_mem")]
     pub fn clone(&self) -> ZeroizeBytes {
         Self(self.0.clone())
-    }
-
-    /// Generate some cryptographically secure random bytes and initialize the internal value of the array with these bytes
-    /// returning the array.
-    #[cfg(feature = "random")]
-    pub fn csprng<const BUFFER_SIZE: usize>() -> Self {
-        let mut buffer = [0u8; BUFFER_SIZE];
-        let mut rng = BufferedRng::new(ChaCha8::new());
-        rng.fill(&mut buffer);
-
-        let mut bytes_buffer = BytesMut::with_capacity(BUFFER_SIZE);
-
-        bytes_buffer.put(&buffer[..]);
-
-        buffer.copy_from_slice(&[0u8; BUFFER_SIZE]);
-
-        ZeroizeBytes(bytes_buffer)
     }
 }
 

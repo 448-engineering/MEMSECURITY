@@ -5,7 +5,16 @@ pub type MemSecurityResult<T> = Result<T, MemSecurityErr>;
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub enum MemSecurityErr {
     /// An error was encountered while encrypting the data
+    #[cfg(feature = "encryption")]
     EncryptionErr,
-    /// An error was encountered when decrypting data using XChaCha12Poly1305
+    /// An error was encountered when decrypting data using XChaCha12Poly1305    
+    #[cfg(feature = "encryption")]
     DecryptionError,
+    /// The length of the arrays should be the same
+    InvalidArrayLength {
+        /// The length defined in generic value `N` in `const N: usize`
+        const_n_len: usize,
+        /// The length of the mutable array `&mut [u8; N]`
+        buffer_len: usize,
+    },
 }

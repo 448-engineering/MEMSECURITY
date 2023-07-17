@@ -20,10 +20,13 @@ pub use keygen::*;
 mod zeroizable_arrays;
 pub use zeroizable_arrays::*;
 
-#[cfg(feature = "encryption")]
 mod errors;
-#[cfg(feature = "encryption")]
 pub use errors::*;
+
+#[cfg(feature = "random")]
+mod random;
+#[cfg(feature = "random")]
+pub use random::*;
 
 mod traits;
 pub use traits::*;
@@ -31,15 +34,20 @@ pub use traits::*;
 /// Re-export  crates
 #[cfg(feature = "encryption")]
 pub use aead;
+#[cfg(feature = "encryption")]
 pub use arrayvec;
+#[cfg(feature = "encryption")]
 pub use blake3;
+#[cfg(feature = "encryption")]
 pub use bytes;
 #[cfg(feature = "encryption")]
 pub use chacha20poly1305;
 #[cfg(feature = "encryption")]
 pub use lazy_static;
 #[cfg(feature = "random")]
-pub use nanorand;
+pub use rand_chacha;
+#[cfg(feature = "random")]
+pub use rand_core;
 pub use zeroize;
 
 // TODO Test different nonces
@@ -47,29 +55,21 @@ pub use zeroize;
 
 #[cfg(tests)]
 mod sanity_tests {
-    use memsecurity::*;
+    use memsecurity::{prelude::*, zeroize::Zeroize};
 
     #[test]
     fn csprng() {
         // Create a new array of 32 bytes that is randomly generated and cryptographically secure
-        let plaintext_bytes1 = ZeroizeBytesArray::<32>::csprng();
-        let plaintext_bytes2 = ZeroizeBytesArray::<32>::csprng();
+        let plaintext_bytes1 = CsprngArray::<32>::csprng();
+        let plaintext_bytes2 = CsprngArray::<64>::csprng();
         assert_eq!(
             plaintext_bytes1.expose().len(),
             plaintext_bytes2.expose().len()
         );
         assert_ne!(plaintext_bytes1, plaintext_bytes2);
 
-        let plaintext_bytes1 = ZeroizeArray::<32>::csprng();
-        let plaintext_bytes2 = ZeroizeArray::<32>::csprng();
-        assert_eq!(
-            plaintext_bytes1.expose().len(),
-            plaintext_bytes2.expose().len()
-        );
-        assert_ne!(plaintext_bytes1, plaintext_bytes2);
-
-        let plaintext_bytes1 = ZeroizeBytes::csprng::<32>();
-        let plaintext_bytes2 = ZeroizeBytes::csprng::<32>();
+        let plaintext_bytes1 = CsprngArray::<32>::csprng();
+        let plaintext_bytes2 = CsprngArray::<32>::csprng();
         assert_eq!(
             plaintext_bytes1.expose().len(),
             plaintext_bytes2.expose().len()
@@ -81,10 +81,13 @@ mod sanity_tests {
     fn cipher() {
         let mut foo = EncryptedMem::<32>::new();
 
-        let plaintext_bytes = ZeroizeBytesArray::csprng();
-        foo.encrypt(&plaintext_bytes).unwrap();
+        let mut plaintext_bytes = CsprngArray::<32>::csprng();
+        let data = ZeroizeBytesArray::new_with_data(plaintext_bytes.expose());
+        foo.encrypt(&data).unwrap();
         let decrypted = foo.decrypt().unwrap();
 
-        assert_eq!(plaintext_bytes, decrypted);
+        assert_eq!(data, decrypted);
+        plaintext_bytes.zeroize();
+        assert_eq!(plaintext_bytes.expose(), [0u8; 32]);
     }
 }

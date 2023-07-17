@@ -3,11 +3,15 @@ use memsecurity::*;
 fn main() {
     let mut foo = EncryptedMem::<32>::new();
 
-    let plaintext_bytes = ZeroizeBytesArray::csprng();
+    let plaintext_bytes = CsprngArray::<32>::gen();
 
-    println!(" PLAINTEXT: {:?}", plaintext_bytes); //WARNING: THIS IS AN EXAMPLE, DO NOT PRINT SECRETS IN CODE
+    println!(" PLAINTEXT: {:?}", plaintext_bytes.expose()); //SECURELY PRINTED TO CONSOLE USING DEBUG TRAIT
+    println!(" PLAINTEXT: {:?}", plaintext_bytes.expose()); //SECURELY PRINTED TO CONSOLE USING DISPLAY TRAIT
+    println!(" PLAINTEXT: {:?}", plaintext_bytes.expose()); //WARNING: THIS IS AN EXAMPLE, DO NOT PRINT SECRETS IN CODE
 
-    foo.encrypt(&plaintext_bytes).unwrap();
+    let data = ZeroizeBytesArray::new_with_data(plaintext_bytes.expose());
+
+    foo.encrypt(&data).unwrap();
 
     println!("CIPHERTEXT: {:?}", foo.ciphertext());
     println!("    XNONCE: {:?}", foo.xnonce());
@@ -15,5 +19,5 @@ fn main() {
     let decrypted = foo.decrypt().unwrap();
 
     println!(" DECRYPTED:{:?}", decrypted);
-    assert_eq!(plaintext_bytes, decrypted);
+    assert_eq!(data, decrypted);
 }

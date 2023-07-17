@@ -1,7 +1,4 @@
-use crate::{ZeroizeArray, ZeroizeBytesArray};
-
-#[cfg(feature = "random")]
-use nanorand::{BufferedRng, ChaCha8, Rng};
+use crate::{CsprngArray, ZeroizeArray, ZeroizeBytesArray};
 
 /// The length of XNonce type (192-bits/24-bytes).
 pub const XNONCE_LENGTH: usize = 24;
@@ -37,8 +34,9 @@ impl<const N: usize> EncryptedMem<N> {
     /// The `ZeroizeBytesArray` initialized with an additional `TAG_LENGTH bytes` for the Poly1305 tag.
     pub fn new() -> Self {
         let mut nonce_buffer = [0u8; XNONCE_LENGTH];
-        let mut rng = BufferedRng::new(ChaCha8::new());
-        rng.fill(&mut nonce_buffer);
+        CsprngArray::<XNONCE_LENGTH>::gen()
+            .take(&mut nonce_buffer)
+            .unwrap(); //Never fails since array lengths are always equal
 
         let outcome = EncryptedMem {
             ciphertext: ZeroizeBytesArray::with_additional_capacity(TAG_LENGTH),
@@ -57,8 +55,9 @@ impl<const N: usize> EncryptedMem<N> {
     /// The `ZeroizeBytesArray` initialized with an additional bytes specified by the `capacity` argument of the method
     pub fn new_with_added_capacity(capacity: usize) -> Self {
         let mut nonce_buffer = [0u8; XNONCE_LENGTH];
-        let mut rng = BufferedRng::new(ChaCha8::new());
-        rng.fill(&mut nonce_buffer);
+        CsprngArray::<XNONCE_LENGTH>::gen()
+            .take(&mut nonce_buffer)
+            .unwrap(); //Never fails since array lengths are always equal
 
         let outcome = EncryptedMem {
             ciphertext: ZeroizeBytesArray::with_additional_capacity(capacity),

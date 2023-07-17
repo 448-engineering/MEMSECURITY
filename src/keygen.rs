@@ -23,15 +23,14 @@ mod keymaker {
 
     use super::{SealingKeyPages, DEFAULT_VAULT_PAGES, DEFAULT_VAULT_PAGE_SIZE};
     use crate::{
-        EncryptedMem, MemSecurityErr, MemSecurityResult, ZeroizeBytes, ZeroizeBytesArray,
-        TAG_LENGTH,
+        CsprngArray, EncryptedMem, MemSecurityErr, MemSecurityResult, ZeroizeBytes,
+        ZeroizeBytesArray, TAG_LENGTH,
     };
     use bytes::BytesMut;
     use chacha20poly1305::{
         aead::{AeadInPlace, KeyInit},
         Key, XChaCha12Poly1305, XNonce,
     };
-    use nanorand::{ChaCha8, Rng};
 
     lazy_static::lazy_static! {
         static ref PREKEY: SealingKeyPages = {
@@ -39,13 +38,10 @@ mod keymaker {
         let mut pages = [[0u8; DEFAULT_VAULT_PAGE_SIZE]; DEFAULT_VAULT_PAGES];
 
         (0..DEFAULT_VAULT_PAGES).for_each(|vault_page_index| {
-            let mut chacha_rng = ChaCha8::new();
-            let mut random_bytes = [0; DEFAULT_VAULT_PAGE_SIZE];
-            (0..DEFAULT_VAULT_PAGE_SIZE).for_each(|index| {
-                random_bytes[index] = chacha_rng.generate::<u8>();
-            });
 
-            pages[vault_page_index] = random_bytes;
+            let random_bytes = CsprngArray::<DEFAULT_VAULT_PAGE_SIZE>::gen();
+
+            random_bytes.take(&mut pages[vault_page_index]).unwrap(); //Never fails since array lengths are always equal
         });
 
         SealingKeyPages(pages)
