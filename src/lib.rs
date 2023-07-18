@@ -17,7 +17,9 @@ mod keygen;
 #[cfg(feature = "encryption")]
 pub use keygen::*;
 
+#[cfg(feature = "symm_asymm")]
 mod zeroizable_arrays;
+#[cfg(feature = "symm_asymm")]
 pub use zeroizable_arrays::*;
 
 mod errors;
@@ -28,7 +30,9 @@ mod random;
 #[cfg(feature = "random")]
 pub use random::*;
 
+#[cfg(feature = "symm_asymm")]
 mod traits;
+#[cfg(feature = "symm_asymm")]
 pub use traits::*;
 
 /// Re-export  crates

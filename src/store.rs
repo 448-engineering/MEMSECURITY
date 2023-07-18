@@ -1,5 +1,5 @@
+#[cfg(all(feature = "encryption", feature = "symm_asymm"))]
 use crate::{CsprngArray, ZeroizeArray, ZeroizeBytesArray};
-
 /// The length of XNonce type (192-bits/24-bytes).
 pub const XNONCE_LENGTH: usize = 24;
 /// The length of Poly1305 tag.
@@ -20,12 +20,14 @@ pub const TAG_LENGTH: usize = 16;
 ///  }   
 /// ```
 ///
+#[cfg(feature = "encryption")]
 #[derive(Debug, PartialEq, Eq)]
 pub struct EncryptedMem<const N: usize> {
     ciphertext: ZeroizeBytesArray<N>,
     xnonce: ZeroizeArray<XNONCE_LENGTH>,
 }
 
+#[cfg(feature = "encryption")]
 impl<const N: usize> EncryptedMem<N> {
     /// Instantiate a new `EncryptedMem` struct with sensible defaults.
     /// This initializes a nonce as `[0u8; XNONCE_LENGTH]` , generates 8 random bytes using `BufferedRng::new(ChaCha8::new())`
