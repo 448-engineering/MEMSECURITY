@@ -27,4 +27,4 @@ jobs:
       run: cargo deny check licenses
 
     - name: Run `simple.rs` example
-      run: cargo run --example simple --features encryption
+      run: cargo run --example simple --features "encryption symm_asymm"
