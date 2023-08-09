@@ -127,14 +127,32 @@ impl<const N: usize> ZeroizeArray<N> {
         self
     }
 
-    /// File the current array with new values specified by the method parameter `value: [u8; N]` but returing a `&mut Self`
+    /// Fill the current array with new values specified by the method parameter `value: [u8; N]` but returing a `&mut Self`
     pub fn fill_from_array_borrowed(&mut self, value: [u8; N]) -> &mut Self {
         self.0.copy_from_slice(&value);
 
         self
     }
 
-    /// File the current array with new values specified by the method parameter `value: [u8; N]`
+    /// Create array with new values specified by the method parameter `value: [u8; N]`
+    pub fn new_from_slice(value: &[u8]) -> MemSecurityResult<Self> {
+        let mut array: [u8; N] = match value.try_into() {
+            Ok(value) => value,
+            Err(_) => {
+                return Err(MemSecurityErr::InvalidSliceLength {
+                    expected: N,
+                    found: value.len(),
+                })
+            }
+        };
+
+        let outcome = ZeroizeArray::new(array);
+        array.fill(0);
+
+        Ok(outcome)
+    }
+
+    /// Fill the current array with new values specified by the method parameter `value: [u8; N]`
     pub fn fill_from_slice(mut self, value: &[u8]) -> MemSecurityResult<Self> {
         let array: [u8; N] = match value.try_into() {
             Ok(value) => value,
