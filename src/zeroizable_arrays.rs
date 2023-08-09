@@ -1,4 +1,4 @@
-use crate::{CsprngArray, ToBlake3Hash};
+use crate::{CsprngArray, MemSecurityErr, MemSecurityResult, ToBlake3Hash};
 use arrayvec::ArrayVec;
 use bytes::{BufMut, BytesMut};
 use core::fmt;
@@ -121,10 +121,51 @@ impl<const N: usize> ZeroizeArray<N> {
     }
 
     /// File the current array with new values specified by the method parameter `value: [u8; N]`
-    pub fn fill_from_slice(&mut self, value: [u8; N]) -> &mut Self {
+    pub fn fill_from_array(mut self, value: [u8; N]) -> Self {
         self.0.copy_from_slice(&value);
 
         self
+    }
+
+    /// File the current array with new values specified by the method parameter `value: [u8; N]` but returing a `&mut Self`
+    pub fn fill_from_array_borrowed(&mut self, value: [u8; N]) -> &mut Self {
+        self.0.copy_from_slice(&value);
+
+        self
+    }
+
+    /// File the current array with new values specified by the method parameter `value: [u8; N]`
+    pub fn fill_from_slice(mut self, value: &[u8]) -> MemSecurityResult<Self> {
+        let array: [u8; N] = match value.try_into() {
+            Ok(value) => value,
+            Err(_) => {
+                return Err(MemSecurityErr::InvalidSliceLength {
+                    expected: N,
+                    found: value.len(),
+                })
+            }
+        };
+
+        self.0.copy_from_slice(&array);
+
+        Ok(self)
+    }
+
+    /// File the current array with new values specified by the method parameter `value: [u8; N]`
+    pub fn fill_from_slice_borrowed(&mut self, value: &[u8]) -> MemSecurityResult<&mut Self> {
+        let array: [u8; N] = match value.try_into() {
+            Ok(value) => value,
+            Err(_) => {
+                return Err(MemSecurityErr::InvalidSliceLength {
+                    expected: N,
+                    found: value.len(),
+                })
+            }
+        };
+
+        self.0.copy_from_slice(&array);
+
+        Ok(self)
     }
 
     /// Expose the internal as an owned array

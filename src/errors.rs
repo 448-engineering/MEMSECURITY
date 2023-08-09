@@ -17,4 +17,11 @@ pub enum MemSecurityErr {
         /// The length of the mutable array `&mut [u8; N]`
         buffer_len: usize,
     },
+    /// The length of the arrays should be the same
+    InvalidSliceLength {
+        /// The length defined in generic value `N` in `const N: usize`
+        expected: usize,
+        /// The length of the `&[u8]` slice
+        found: usize,
+    },
 }
