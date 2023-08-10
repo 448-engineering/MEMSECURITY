@@ -1,4 +1,4 @@
-#![forbid(unsafe_code)]
+#![deny(unsafe_code)]
 #![forbid(missing_docs)]
 #![doc = include_str!("../README.md")]
 
@@ -8,14 +8,9 @@ mod cryptography_structures;
 pub use cryptography_structures::*;
 
 #[cfg(feature = "encryption")]
-mod store;
+mod encrypted_mem;
 #[cfg(feature = "encryption")]
-pub use store::*;
-
-#[cfg(feature = "encryption")]
-mod keygen;
-#[cfg(feature = "encryption")]
-pub use keygen::*;
+pub use encrypted_mem::*;
 
 #[cfg(feature = "symm_asymm")]
 mod zeroizable_arrays;
