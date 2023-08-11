@@ -19,7 +19,7 @@ jobs:
     - name: Build
       run: cargo build
     - name: Build with all features
-      run: cargo build --all--features
+      run: cargo build --all-features
     - name: Run build with `random` feature enabled
       run: cargo build --no-default-features --features random --verbose
     - name: Run build with `clonable_mem` feature enabled
