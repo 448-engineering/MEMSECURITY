@@ -3,55 +3,112 @@
 [![Rust](https://github.com/448-engineering/MEMSECURITY/actions/workflows/rust.yml/badge.svg?branch=master)](https://github.com/448-engineering/MEMSECURITY/actions/workflows/rust.yml)  ![crates.io](https://img.shields.io/crates/v/memsecurity.svg)[![Docs](https://docs.rs/memsecurity/badge.svg)](https://docs.rs/memsecurity)
 
 
-Securely hold secrets in memory and protect them against cross-protection-boundary readout via microarchitectural, via attacks on physical layout, and via coldboot attacks.
+Securely hold secrets in memory and protect them against cross-protection-boundary readout via microarchitectural, via attacks on physical layout, and via coldboot attacks. `mlock` is also used to prevent the operating system from swapping these secrets to RAM which offers some level of protection aganist cold boot attacks.
 
-The given type of encryption secures sensitive data, such as secret keys, by encrypting them in memory while they are not in use and decrypting them on demand. This method provides protection against various types of attacks, including cross-protection-boundary readout via microarchitectural flaws like Spectre or Meltdown, attacks on physical layout like Rowbleed, and coldboot attacks. The key insight is that these attacks are imperfect, meaning that the recovered data contains bitflips or the attack only provides a probability for any given bit. When applied to cryptographic keys, these kinds of imperfect attacks are enough to recover the actual key. However, this implementation derives a sealing key from a large area of memory called the "pre-key" using a key derivation function. Any single bitflip in the readout of the pre-key will avalanche through all the bits in the sealing key, rendering it unusable with no indication of where the error occurred.
+This algorithm was invented by [OpenSSH](https://marc.info/?l=openbsd-cvs&m=156109087822676). The given type of encryption secures sensitive data, such as secret keys, by encrypting them in memory while they are not in use and decrypting them on demand. This method provides protection against various types of attacks, including cross-protection-boundary readout via microarchitectural flaws like Spectre or Meltdown, attacks on physical layout like Rowbleed, and coldboot attacks. The key insight is that these attacks are imperfect, meaning that the recovered data contains bitflips or the attack only provides a probability for any given bit. When applied to cryptographic keys, these kinds of imperfect attacks are enough to recover the actual key. 
+
+However, this implementation derives a sealing key from a large area of memory called the "pre-key" using a key derivation function. Any single bitflip in the readout of the pre-key will avalanche through all the bits in the sealing key, rendering it unusable with no indication of where the error occurred.
 
 
 This crate has not received an audit. Use at your own risk!!!
 
-- The Arrays can be used without the need to import other crates for encryption by simple adding the crate with no extra features.
-    ```toml
-    [dependencies]
-    memsecurity = "1.0.0"
+#### Features
+- **`symm_asymm`** - feature enables data types that can be used to securely zero out memory when they are dropped. They implement `Zeroize` trait from `zeroize` crate.
+- **`clonable_mem`** - Allows the cloning of data types enabled by the `symm_asymm`  features.
+- **`encryption`** - This enables encrypted memory with `mlock` and `munlock`.
+- **`random`** - This enables cryptographically secure random number generator which use `rand_core` and `rand_chacha`.
+
+
+#### Usage Examples
+1. ###### Generating random bytes
+   Using the random byte generator (it is cryptographically secure based on the randomness provided by the OS you are using). The `random` feature must be enabled.
+    ```rust
+    use memsecurity::CsprngArray;
+
+    // Generate a 32 byte array of random bytes
+    let random_bytes = CsprngArray::<32>::gen();
+
+    // Assert that the random bytes are not zeroes
+    assert_ne!(random_bytes.expose_borrowed(), &[0u8; 32]);
+
+    // Use a simplified version of the random bytes generator.
+    use memsecurity::CsprngArraySimple;
+
+    // Generate one random byte
+    let random8_byte = CsprngArraySimple::gen_u8_byte();
+
+    // Generate 8 random bytes
+    let random8 = CsprngArraySimple::gen_u8_array();
+    assert_eq!(random8.expose_borrowed().len(), 8);
+
+    // Generate 16 random bytes
+    let random16 = CsprngArraySimple::gen_u16_array();
+    assert_eq!(random16.expose_borrowed().len(), 16);
+
+    // Generate 24 random bytes
+    let random24 = CsprngArraySimple::gen_u24_array();
+    assert_eq!(random24.expose_borrowed().len(), 24);
+
+    // Generate 32 random bytes
+    let random32 = CsprngArraySimple::gen_u32_array();
+    assert_eq!(random32.expose_borrowed().len(), 32);
+
+    // Generate 64 random bytes
+    let random64 = CsprngArraySimple::gen_u64_array();
+    assert_eq!(random64.expose_borrowed().len(), 64);
     ```
+2. ###### Using the data types that are zeroed when dropped
+    Sometimes sensitive data needs to be zeroed when it is dropped. This can be to protect secrets like encryption keys or passwords by ensuring they are not kept in memory when they are no longer needed. The `symm_asymm` feature must be enabled. The `clonable_mem` feature can be enabled if they you need to clone these secrets (Use these with care). Most of these have the `.expose_borrowed()` method which exposes the inner value if you want to use that value.
+    ```rust
+    use memsecurity::{ZeroizeArray, ZeroizeBytes};
 
-- To enable crating of arrays with CSPRNG random bytes that can be zeroed out use the `random` feature
-    ```toml
-    [dependencies]
-    memsecurity = { version = "1.0.0", features = ["random"] }
+    // Create an array of 4 bytes that will be zeroed out when dropped.
+    let array_like = ZeroizeArray::<4>::new([4u8, 3,2,1]);
+
+    // Use the value
+    array_like.expose_borrowed();
+
+    // Create a Vec like array using `BytesMut` from `bytes` crate that re-allocates when it's capacity is exceeded.
+    let mut vector_like = ZeroizeBytes::new();
+
+    // Insert a slice of bytes
+    vector_like.set(&[4u8, 5,6,7]); // Must be a byte (u8) type
+
+    // Use the value
+    vector_like.expose_borrowed();
     ```
+3. ###### Encrypt a secret while in memory using XChaCha12Poly1305 encryption
+    Whenever you want to encrypt secrets like passwords or encryption keys in memory, enable the `encryption` feature to use the `EncryptedMem` type. `mlock` and `munlock` are also implemented in this data.
+    The encryption key is generated afresh on each app run
+    ```rust
+    use memsecurity::{EncryptedMem, CsprngArray};
 
-- To enable encryption of memory secrets, add this crate with the `encryption` feature. This feature automatically enables random bytes generation from the feature `random`.
-    ```toml
-    [dependencies]
-    memsecurity = { version = "1.0.0", features = ["encryption"] }
-    ```
-
-
-#### EXAMPLE
-```rust
-use memsecurity::*;
-
-fn main() {
-    let mut foo = EncryptedMem::<32>::new();
-
+    // Initialize the struct with a random nonce (XNonce for XChaCha12Poly1305)
+    let mut foo = EncryptedMem::new();
+    
+    // Here a some random bytes are generated to simulate
+    // some secret you want to protect.
+    // Here the value must implement `Zeroize` trait
+    // and `impl From<AsRef<[u8]>>` trait so be accepted
+    // by the `encrypt()` and `decrypt()` methods of `EncryptedMem`.
     let plaintext_bytes = CsprngArray::<32>::gen();
 
-    println!(" PLAINTEXT: {:?}", plaintext_bytes.expose()); //SECURELY PRINTED TO CONSOLE USING DEBUG TRAIT
-    println!(" PLAINTEXT: {:?}", plaintext_bytes.expose()); //SECURELY PRINTED TO CONSOLE USING DISPLAY TRAIT
-    println!(" PLAINTEXT: {:?}", plaintext_bytes.expose()); //WARNING: THIS IS AN EXAMPLE, DO NOT PRINT SECRETS IN CODE
+    // Encrypt the secret in memory using the randomly
+    // generated encryption key that is `mlocked`
+    foo.encrypt(&plaintext_bytes).unwrap();
 
-    let data = ZeroizeBytesArray::new_with_data(plaintext_bytes.expose());
-
-    foo.encrypt(&data).unwrap();
-
-    println!("CIPHERTEXT: {:?}", foo.ciphertext());
-    println!("    XNONCE: {:?}", foo.xnonce());
-
+    // Decrypt the secret using the `mlocked` key
     let decrypted = foo.decrypt().unwrap();
 
-    println!(" DECRYPTED:{:?}", decrypted);
-    assert_eq!(data, decrypted);
-}
-```
+    assert_eq!(
+        plaintext_bytes.expose_borrowed(),
+        decrypted.expose_borrowed()
+    );
+    ```
+
+#### LICENSE
+This crate is licensed under Apache license and all contributions and redistributions must bear the same license.
+
+#### Code of Conduct
+All conversations and contributions must obey the Rust Code of Conduct [https://www.rust-lang.org/policies/code-of-conduct](https://www.rust-lang.org/policies/code-of-conduct)
+

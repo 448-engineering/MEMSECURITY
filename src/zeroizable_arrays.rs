@@ -1,8 +1,11 @@
-use crate::{CsprngArray, MemSecurityErr, MemSecurityResult, ToBlake3Hash};
+use crate::{MemSecurityErr, MemSecurityResult, ToBlake3Hash};
 use arrayvec::ArrayVec;
 use bytes::{BufMut, BytesMut};
 use core::fmt;
 use zeroize::{Zeroize, ZeroizeOnDrop};
+
+#[cfg(feature = "random")]
+use crate::CsprngArray;
 
 /// This a byte that is zeroed out when dropped from memory.
 /// #### Structure
@@ -90,6 +93,12 @@ impl ZeroizeOnDrop for ZeroizeByte {}
 /// pub struct ZeroizeArray<const N: usize>([u8; N]);
 /// ```
 pub struct ZeroizeArray<const N: usize>([u8; N]);
+
+impl<const N: usize> AsRef<[u8]> for ZeroizeArray<N> {
+    fn as_ref(&self) -> &[u8] {
+        self.expose_borrowed()
+    }
+}
 
 impl<const N: usize> fmt::Debug for ZeroizeArray<N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -242,6 +251,12 @@ impl<const N: usize> ZeroizeOnDrop for ZeroizeArray<N> {}
 
 pub struct ZeroizeBytesArray<const N: usize>(BytesMut);
 
+impl<const N: usize> AsRef<[u8]> for ZeroizeBytesArray<N> {
+    fn as_ref(&self) -> &[u8] {
+        self.expose_borrowed()
+    }
+}
+
 impl<const N: usize> PartialEq for ZeroizeBytesArray<N> {
     fn eq(&self, other: &Self) -> bool {
         blake3::hash(&self.0) == blake3::hash(&other.0)
@@ -266,6 +281,7 @@ impl<const N: usize> ZeroizeBytesArray<N> {
     }
 
     /// Initialize the array and set the internal value of the array to the value specified by method argument
+    #[cfg(feature = "random")]
     pub fn new_with_csprng() -> Self {
         let mut value_bytes = BytesMut::with_capacity(N);
 
@@ -350,6 +366,12 @@ impl<const N: usize> ZeroizeOnDrop for ZeroizeBytesArray<N> {}
 /// pub struct ZeroizeBytes(BytesMut);
 /// ```
 pub struct ZeroizeBytes(BytesMut);
+
+impl AsRef<[u8]> for ZeroizeBytes {
+    fn as_ref(&self) -> &[u8] {
+        self.expose_borrowed()
+    }
+}
 
 impl PartialEq for ZeroizeBytes {
     fn eq(&self, other: &Self) -> bool {
