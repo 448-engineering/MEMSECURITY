@@ -5,6 +5,10 @@
 //!
 //!
 
+use crate::{CsprngArraySimple, ZeroizeBytes};
+use chacha20poly1305::XNonce;
+use core::fmt;
+
 /// The number of pages used to accommodate one page of 4KiB in size.
 pub const DEFAULT_VAULT_PAGES: usize = 4;
 /// A size in KiB of one page (a page is a fixed-size block of memory used by the operating system to manage memory)
@@ -14,6 +18,60 @@ pub const POLY1305_TAG_SIZE: usize = 16;
 /// The layout of the bytes used to create the key
 pub type VaultPagesLayout<const VAULT_PAGES: usize, const VAULT_PAGE_SIZE: usize> =
     [[u8; VAULT_PAGE_SIZE]; VAULT_PAGES];
+
+/// A struct that holds the encrypted secret and performs encryption and decryption on the secret.
+/// #### Structure
+/// ```rs
+/// pub struct EncryptedMem {
+///     ciphertext: ZeroizeBytes,
+///     nonce: XNonce,
+/// }
+/// ```
+
+pub struct EncryptedMem {
+    ciphertext: ZeroizeBytes,
+    nonce: XNonce,
+}
+
+impl fmt::Debug for EncryptedMem {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("EncryptedMem")
+            .field(
+                "ciphertext",
+                &blake3::hash(self.ciphertext.expose_borrowed()),
+            )
+            .field("nonce", &blake3::hash(&self.nonce))
+            .finish()
+    }
+}
+
+impl EncryptedMem {
+    /// Initializes a new [EncryptedMem]
+    /// #### Usage
+    /// ```rs
+    /// let data = EncryptedMem::new();
+    /// ```
+    pub fn new() -> Self {
+        let nonce = CsprngArraySimple::gen_u24_array();
+
+        assert_ne!(nonce.expose(), [0u8; 24]);
+
+        EncryptedMem {
+            ciphertext: ZeroizeBytes::new(),
+            nonce: nonce.expose().into(),
+        }
+    }
+
+    /// Expose the ciphertext
+    pub fn ciphertext(&self) -> &ZeroizeBytes {
+        &self.ciphertext
+    }
+
+    /// Expose Nonce
+    pub fn nonce(&self) -> &XNonce {
+        &self.nonce
+    }
+}
 
 /// The struct used to hold the sealing key used for encrypt data
 /// while it's loaded in memory.
@@ -30,12 +88,12 @@ pub struct SealingKey<const VAULT_PAGES: usize, const VAULT_PAGE_SIZE: usize>(
 mod key_ops {
     use super::SealingKey;
     use crate::{
-        CsprngArray, MemSecurityErr, MemSecurityResult, ZeroizeBytes, DEFAULT_VAULT_PAGES,
-        DEFAULT_VAULT_PAGE_SIZE,
+        CsprngArray, EncryptedMem, MemSecurityErr, MemSecurityResult, ZeroizeBytes,
+        DEFAULT_VAULT_PAGES, DEFAULT_VAULT_PAGE_SIZE,
     };
     use chacha20poly1305::{
         aead::{Aead, KeyInit},
-        XChaCha12Poly1305, XNonce,
+        XChaCha12Poly1305,
     };
     use once_cell::sync::Lazy;
     use zeroize::{Zeroize, ZeroizeOnDrop};
@@ -91,20 +149,49 @@ mod key_ops {
 
         #[allow(unsafe_code)]
         fn munlock_kek(&self, ptr: *mut u8) -> bool {
-            unsafe { memsec::mlock(ptr, blake3::OUT_LEN) }
+            unsafe { memsec::munlock(ptr, blake3::OUT_LEN) }
         }
+    }
+
+    impl<const VAULT_PAGES: usize, const VAULT_PAGE_SIZE: usize> Zeroize
+        for SealingKey<VAULT_PAGES, VAULT_PAGE_SIZE>
+    {
+        fn zeroize(&mut self) {
+            self.0 = [[0u8; VAULT_PAGE_SIZE]; VAULT_PAGES];
+        }
+    }
+
+    impl<const VAULT_PAGES: usize, const VAULT_PAGE_SIZE: usize> ZeroizeOnDrop
+        for SealingKey<VAULT_PAGES, VAULT_PAGE_SIZE>
+    {
+    }
+
+    impl<const VAULT_PAGES: usize, const VAULT_PAGE_SIZE: usize> Drop
+        for SealingKey<VAULT_PAGES, VAULT_PAGE_SIZE>
+    {
+        fn drop(&mut self) {
+            self.munlock_pages();
+
+            #[cfg(debug_assertions)]
+            self.0
+                .iter()
+                .for_each(|page| debug_assert_eq!(page, &[0u8; VAULT_PAGE_SIZE]))
+        }
+    }
+
+    impl EncryptedMem {
         /// Performs an encryption operation.
         pub fn encrypt<T: Zeroize + AsRef<[u8]>>(
-            plaintext: T,
-            nonce: XNonce,
-        ) -> MemSecurityResult<Vec<u8>> {
+            &mut self,
+            plaintext: &T,
+        ) -> MemSecurityResult<&mut Self> {
             let mut kek = SEALING_KEY.kek();
             let kek_ptr = kek.as_mut_ptr();
             SEALING_KEY.mlock_kek(kek_ptr); //TODO Handle this bool
 
             let cipher = XChaCha12Poly1305::new(&kek.into());
 
-            let outcome = match cipher.encrypt(&nonce, plaintext.as_ref()) {
+            let outcome = match cipher.encrypt(&self.nonce, plaintext.as_ref()) {
                 Ok(ciphertext) => Ok(ciphertext),
                 Err(_) => Err(MemSecurityErr::EncryptionErr),
             };
@@ -113,24 +200,24 @@ mod key_ops {
 
             debug_assert_eq!(kek, [0u8; blake3::OUT_LEN]);
 
-            outcome
+            self.ciphertext = ZeroizeBytes::new_with_data(&outcome?);
+
+            Ok(self)
         }
 
         /// Performs an decryption operation.
-        pub fn decrypt<T: Zeroize + AsRef<[u8]>>(
-            ciphertext: T,
-            nonce: XNonce,
-        ) -> MemSecurityResult<ZeroizeBytes> {
+        pub fn decrypt(&self) -> MemSecurityResult<ZeroizeBytes> {
             let mut kek = SEALING_KEY.kek();
             let kek_ptr = kek.as_mut_ptr();
             SEALING_KEY.mlock_kek(kek_ptr); //TODO Handle this bool
 
             let cipher = XChaCha12Poly1305::new(&kek.into());
 
-            let outcome = match cipher.decrypt(&nonce, ciphertext.as_ref()) {
-                Ok(plaintext) => Ok(ZeroizeBytes::new_with_data(&plaintext)),
-                Err(_) => Err(MemSecurityErr::EncryptionErr),
-            };
+            let outcome =
+                match cipher.decrypt(&self.nonce, self.ciphertext.expose_borrowed().as_ref()) {
+                    Ok(plaintext) => Ok(ZeroizeBytes::new_with_data(&plaintext)),
+                    Err(_) => Err(MemSecurityErr::EncryptionErr),
+                };
 
             SEALING_KEY.munlock_kek(kek_ptr); //TODO Handle this bool
 
@@ -190,32 +277,6 @@ mod key_ops {
             debug_assert_eq!(kek, [0u8; 32]);
 
             outcome
-        }
-    }
-
-    impl<const VAULT_PAGES: usize, const VAULT_PAGE_SIZE: usize> Zeroize
-        for SealingKey<VAULT_PAGES, VAULT_PAGE_SIZE>
-    {
-        fn zeroize(&mut self) {
-            self.0 = [[0u8; VAULT_PAGE_SIZE]; VAULT_PAGES];
-        }
-    }
-
-    impl<const VAULT_PAGES: usize, const VAULT_PAGE_SIZE: usize> ZeroizeOnDrop
-        for SealingKey<VAULT_PAGES, VAULT_PAGE_SIZE>
-    {
-    }
-
-    impl<const VAULT_PAGES: usize, const VAULT_PAGE_SIZE: usize> Drop
-        for SealingKey<VAULT_PAGES, VAULT_PAGE_SIZE>
-    {
-        fn drop(&mut self) {
-            self.munlock_pages();
-
-            #[cfg(debug_assertions)]
-            self.0
-                .iter()
-                .for_each(|page| debug_assert_eq!(page, &[0u8; VAULT_PAGE_SIZE]))
         }
     }
 }

@@ -91,6 +91,12 @@ impl ZeroizeOnDrop for ZeroizeByte {}
 /// ```
 pub struct ZeroizeArray<const N: usize>([u8; N]);
 
+impl<const N: usize> AsRef<[u8]> for ZeroizeArray<N> {
+    fn as_ref(&self) -> &[u8] {
+        self.expose_borrowed()
+    }
+}
+
 impl<const N: usize> fmt::Debug for ZeroizeArray<N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
@@ -242,6 +248,12 @@ impl<const N: usize> ZeroizeOnDrop for ZeroizeArray<N> {}
 
 pub struct ZeroizeBytesArray<const N: usize>(BytesMut);
 
+impl<const N: usize> AsRef<[u8]> for ZeroizeBytesArray<N> {
+    fn as_ref(&self) -> &[u8] {
+        self.expose_borrowed()
+    }
+}
+
 impl<const N: usize> PartialEq for ZeroizeBytesArray<N> {
     fn eq(&self, other: &Self) -> bool {
         blake3::hash(&self.0) == blake3::hash(&other.0)
@@ -350,6 +362,12 @@ impl<const N: usize> ZeroizeOnDrop for ZeroizeBytesArray<N> {}
 /// pub struct ZeroizeBytes(BytesMut);
 /// ```
 pub struct ZeroizeBytes(BytesMut);
+
+impl AsRef<[u8]> for ZeroizeBytes {
+    fn as_ref(&self) -> &[u8] {
+        self.expose_borrowed()
+    }
+}
 
 impl PartialEq for ZeroizeBytes {
     fn eq(&self, other: &Self) -> bool {

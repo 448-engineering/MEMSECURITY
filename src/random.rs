@@ -86,6 +86,12 @@ impl CsprngArraySimple {
 /// ```
 pub struct CsprngArray<const N: usize>([u8; N]);
 
+impl<const N: usize> AsRef<[u8]> for CsprngArray<N> {
+    fn as_ref(&self) -> &[u8] {
+        self.expose_borrowed()
+    }
+}
+
 impl<const N: usize> CsprngArray<N> {
     /// Method to generate random cryptographically secure random bytes
     /// #### Example
@@ -148,6 +154,12 @@ impl<const N: usize> CsprngArray<N> {
     /// It is recommended to call `Csprng::zeroize()` after consuming this in order to zeroize the memory
     pub fn expose(&self) -> [u8; N] {
         self.0
+    }
+
+    /// Clone the data. Be careful with this as it retains the secret in memory.
+    /// It is recommended to call `Csprng::zeroize()` after consuming this in order to zeroize the memory
+    pub fn expose_borrowed(&self) -> &[u8] {
+        self.0.as_ref()
     }
 
     /// Get the inner value of the struct. This is only available in a debug build and
