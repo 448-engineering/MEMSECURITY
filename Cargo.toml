@@ -1,6 +1,6 @@
 [package]
 name = "memsecurity"
-version = "2.2.1"
+version = "3.0.0"
 authors = ["448 ENGINEERING DESIGN DEVELOPERS <superuser@448.africa>"]
 license = "Apache-2.0 OR MIT"
 description = "Securely hold secrets in memory and protect them against cross-protection-boundary readout via microarchitectural, via attacks on physical layout, and via coldboot attacks."
@@ -34,13 +34,15 @@ rand_core = { version = "0.6.4", features = ["getrandom"], optional = true }
 zeroize = { version = "1.5.7", default-features = false }
 
 [features]
-default = ["random"]
+default = ["full"]
 encryption = [
     "dep:aead",
     "dep:chacha20poly1305",
     "dep:lazy_static",
     "random",
     "dep:memsec",
+    "dep:blake3",
+    "symm_asymm",
 ]
 random = ["dep:rand_core", "rand_chacha"]
 symm_asymm = ["dep:bytes", "dep:arrayvec", "dep:blake3"]

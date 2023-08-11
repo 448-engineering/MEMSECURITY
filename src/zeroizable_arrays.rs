@@ -1,8 +1,11 @@
-use crate::{CsprngArray, MemSecurityErr, MemSecurityResult, ToBlake3Hash};
+use crate::{MemSecurityErr, MemSecurityResult, ToBlake3Hash};
 use arrayvec::ArrayVec;
 use bytes::{BufMut, BytesMut};
 use core::fmt;
 use zeroize::{Zeroize, ZeroizeOnDrop};
+
+#[cfg(feature = "random")]
+use crate::CsprngArray;
 
 /// This a byte that is zeroed out when dropped from memory.
 /// #### Structure
@@ -278,6 +281,7 @@ impl<const N: usize> ZeroizeBytesArray<N> {
     }
 
     /// Initialize the array and set the internal value of the array to the value specified by method argument
+    #[cfg(feature = "random")]
     pub fn new_with_csprng() -> Self {
         let mut value_bytes = BytesMut::with_capacity(N);
 

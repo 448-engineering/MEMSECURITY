@@ -4,7 +4,7 @@
 //!
 //!
 //!
-
+#[cfg(all(feature = "symm_asymm", feature = "random"))]
 use crate::{CsprngArraySimple, ZeroizeBytes};
 use chacha20poly1305::XNonce;
 use core::fmt;
