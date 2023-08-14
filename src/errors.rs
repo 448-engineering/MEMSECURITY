@@ -24,4 +24,9 @@ pub enum MemSecurityErr {
         /// The length of the `&[u8]` slice
         found: usize,
     },
+    /// The Length of the stored secret key is not the size
+    /// required to reconstruct and `ed25519_dalek::SigningKey`.
+    /// The size is 32 bytes (128bits)
+    #[cfg(feature = "encryption")]
+    InvalidSizeForEd25519SecretKey,
 }

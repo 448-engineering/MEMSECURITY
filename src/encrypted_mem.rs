@@ -9,6 +9,10 @@ use crate::{CsprngArraySimple, ZeroizeBytes};
 use chacha20poly1305::XNonce;
 use core::fmt;
 
+/// The length of a ed25519 secret key converted to usize
+#[cfg(feature = "ed25519")]
+pub const ED25519_SECRET_KEY_LEN: usize = ed25519_dalek::SECRET_KEY_LENGTH as usize;
+
 /// The number of pages used to accommodate one page of 4KiB in size.
 pub const DEFAULT_VAULT_PAGES: usize = 4;
 /// A size in KiB of one page (a page is a fixed-size block of memory used by the operating system to manage memory)
@@ -88,7 +92,7 @@ pub struct SealingKey<const VAULT_PAGES: usize, const VAULT_PAGE_SIZE: usize>(
 mod key_ops {
     use super::SealingKey;
     use crate::{
-        CsprngArray, EncryptedMem, MemSecurityErr, MemSecurityResult, ZeroizeBytes,
+        CsprngArray, EncryptedMem, MemSecurityErr, MemSecurityResult, ZeroizeArray, ZeroizeBytes,
         DEFAULT_VAULT_PAGES, DEFAULT_VAULT_PAGE_SIZE,
     };
     use chacha20poly1305::{
@@ -277,6 +281,55 @@ mod key_ops {
             debug_assert_eq!(kek, [0u8; 32]);
 
             outcome
+        }
+
+        /// Performs an decryption operation.
+        #[cfg(feature = "ed25519")]
+        fn decrypt_ed25519(
+            &self,
+        ) -> MemSecurityResult<ZeroizeArray<{ crate::ED25519_SECRET_KEY_LEN }>> {
+            let mut kek = SEALING_KEY.kek();
+            let kek_ptr = kek.as_mut_ptr();
+            SEALING_KEY.mlock_kek(kek_ptr); //TODO Handle this bool
+
+            let cipher = XChaCha12Poly1305::new(&kek.into());
+
+            let outcome =
+                match cipher.decrypt(&self.nonce, self.ciphertext.expose_borrowed().as_ref()) {
+                    Ok(plaintext) => {
+                        if plaintext.len() != crate::ED25519_SECRET_KEY_LEN {
+                            return Err(MemSecurityErr::InvalidSizeForEd25519SecretKey);
+                        } else {
+                            ZeroizeArray::<{ crate::ED25519_SECRET_KEY_LEN }>::new_from_slice(
+                                &plaintext,
+                            )
+                        }
+                    }
+                    Err(_) => Err(MemSecurityErr::EncryptionErr),
+                };
+
+            SEALING_KEY.munlock_kek(kek_ptr); //TODO Handle this bool
+
+            debug_assert_eq!(kek, [0u8; blake3::OUT_LEN]);
+
+            outcome
+        }
+
+        /// Add Ed25519 signatures.
+        #[cfg(feature = "ed25519")]
+        pub fn sign<T: Zeroize + AsRef<[u8]>>(
+            &self,
+            message: T,
+        ) -> MemSecurityResult<ed25519_dalek::Signature> {
+            use ed25519_dalek::{Signer, SigningKey};
+
+            let encrypted_key = self.decrypt_ed25519()?;
+
+            let signing_key = SigningKey::from_bytes(encrypted_key.expose_borrowed());
+
+            drop(encrypted_key);
+
+            Ok(signing_key.sign(message.as_ref()))
         }
     }
 }
