@@ -84,7 +84,7 @@ jobs:
     - name: Run `simple.rs` example with default features
       run: cargo run --example simple
 
-  build:
+  build_macos:
 
     runs-on: macos-latest
 
