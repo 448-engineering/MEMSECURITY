@@ -35,6 +35,10 @@ memsec = { version = "0.6.3", optional = true }
 once_cell = "1.18.0"
 rand_chacha = { version = "0.3.1", default-features = false, optional = true }
 rand_core = { version = "0.6.4", features = ["getrandom"], optional = true }
+x25519-dalek = { version = "2.0.0", features = [
+    "zeroize",
+    "static_secrets",
+], optional = true }
 zeroize = { version = "1.5.7", default-features = false }
 
 [features]
@@ -50,9 +54,17 @@ encryption = [
 ]
 random = ["dep:rand_core", "rand_chacha"]
 ed25519 = ["dep:ed25519-dalek"]
+x25519 = ["dep:x25519-dalek"]
 symm_asymm = ["dep:bytes", "dep:arrayvec", "dep:blake3"]
 clonable_mem = []
-full = ["symm_asymm", "clonable_mem", "random", "encryption", "ed25519"]
+full = [
+    "symm_asymm",
+    "clonable_mem",
+    "random",
+    "encryption",
+    "ed25519",
+    "x25519",
+]
 
 [profile.dev]
 overflow-checks = true

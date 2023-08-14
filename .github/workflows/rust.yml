@@ -38,5 +38,11 @@ jobs:
     - name: Check licenses are correct
       run: cargo deny check licenses
 
-    - name: Run `simple.rs` example
-      run: cargo run --example simple --features encryption
+    - name: Run `simple.rs` example with no default features
+      run: cargo run --example simple --no-default-features --features "encryption ed25519 x25519"
+
+    - name: Run `simple.rs` example with features set to `full`
+      run: cargo run --example simple --no-default-features --features full
+
+    - name: Run `simple.rs` example with default features
+      run: cargo run --example simple

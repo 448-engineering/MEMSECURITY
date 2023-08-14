@@ -9,9 +9,8 @@ use crate::{CsprngArraySimple, ZeroizeBytes};
 use chacha20poly1305::XNonce;
 use core::fmt;
 
-/// The length of a ed25519 secret key converted to usize
-#[cfg(feature = "ed25519")]
-pub const ED25519_SECRET_KEY_LEN: usize = ed25519_dalek::SECRET_KEY_LENGTH as usize;
+/// The length of a 32 byte secret key
+pub const SECRET_KEY_32BYTE: usize = 32;
 
 /// The number of pages used to accommodate one page of 4KiB in size.
 pub const DEFAULT_VAULT_PAGES: usize = 4;
@@ -283,11 +282,8 @@ mod key_ops {
             outcome
         }
 
-        /// Performs an decryption operation.
-        #[cfg(feature = "ed25519")]
-        fn decrypt_ed25519(
-            &self,
-        ) -> MemSecurityResult<ZeroizeArray<{ crate::ED25519_SECRET_KEY_LEN }>> {
+        /// Performs an decryption operation expecting a 32 byte array that is zeroed when dropped.
+        fn decrypt_32byte(&self) -> MemSecurityResult<ZeroizeArray<32>> {
             let mut kek = SEALING_KEY.kek();
             let kek_ptr = kek.as_mut_ptr();
             SEALING_KEY.mlock_kek(kek_ptr); //TODO Handle this bool
@@ -297,12 +293,14 @@ mod key_ops {
             let outcome =
                 match cipher.decrypt(&self.nonce, self.ciphertext.expose_borrowed().as_ref()) {
                     Ok(plaintext) => {
-                        if plaintext.len() != crate::ED25519_SECRET_KEY_LEN {
-                            return Err(MemSecurityErr::InvalidSizeForEd25519SecretKey);
+                        let plaintext_len = plaintext.len();
+                        if plaintext_len != crate::SECRET_KEY_32BYTE {
+                            return Err(MemSecurityErr::InvalidArrayLength {
+                                expected: crate::SECRET_KEY_32BYTE,
+                                found: plaintext_len,
+                            });
                         } else {
-                            ZeroizeArray::<{ crate::ED25519_SECRET_KEY_LEN }>::new_from_slice(
-                                &plaintext,
-                            )
+                            ZeroizeArray::<{ crate::SECRET_KEY_32BYTE }>::new_from_slice(&plaintext)
                         }
                     }
                     Err(_) => Err(MemSecurityErr::EncryptionErr),
@@ -315,7 +313,7 @@ mod key_ops {
             outcome
         }
 
-        /// Add Ed25519 signatures.
+        /// Sign a message and return an Ed25519 digital signature
         #[cfg(feature = "ed25519")]
         pub fn sign<T: Zeroize + AsRef<[u8]>>(
             &self,
@@ -323,13 +321,45 @@ mod key_ops {
         ) -> MemSecurityResult<ed25519_dalek::Signature> {
             use ed25519_dalek::{Signer, SigningKey};
 
-            let encrypted_key = self.decrypt_ed25519()?;
+            let encrypted_key = self.decrypt_32byte()?;
 
             let signing_key = SigningKey::from_bytes(encrypted_key.expose_borrowed());
 
             drop(encrypted_key);
 
             Ok(signing_key.sign(message.as_ref()))
+        }
+
+        /// Perform a Diffie-Hellman key exchange of a secret key
+        /// assuming that that secret key was added as an X25519 static secret
+        #[cfg(feature = "x25519")]
+        pub fn x25519_dh(
+            &self,
+            x25519_public_key: x25519_dalek::PublicKey,
+        ) -> MemSecurityResult<x25519_dalek::SharedSecret> {
+            use x25519_dalek::StaticSecret;
+
+            let encrypted_key = self.decrypt_32byte()?;
+
+            let x25519_static_key = StaticSecret::from(encrypted_key.expose_borrowed().clone());
+
+            drop(encrypted_key);
+
+            Ok(x25519_static_key.diffie_hellman(&x25519_public_key))
+        }
+
+        /// Generate the public key assuming that that secret key was added as an X25519 static secret
+        #[cfg(feature = "x25519")]
+        pub fn x25519_public_key(&self) -> MemSecurityResult<x25519_dalek::PublicKey> {
+            use x25519_dalek::{PublicKey, StaticSecret};
+
+            let encrypted_key = self.decrypt_32byte()?;
+
+            let x25519_static_key = StaticSecret::from(encrypted_key.expose_borrowed().clone());
+
+            drop(encrypted_key);
+
+            Ok(PublicKey::from(&x25519_static_key))
         }
     }
 }

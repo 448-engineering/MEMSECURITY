@@ -114,13 +114,10 @@ impl<const N: usize> CsprngArray<N> {
     /// Copies the contents of the buffer
     pub fn take(mut self, buffer: &mut [u8; N]) -> MemSecurityResult<()> {
         // FIXME implement
-        let buffer_len = buffer.len();
+        let found = buffer.len();
 
-        if buffer.len() != N {
-            Err(crate::MemSecurityErr::InvalidArrayLength {
-                const_n_len: N,
-                buffer_len,
-            })
+        if found != N {
+            Err(crate::MemSecurityErr::InvalidArrayLength { expected: N, found })
         } else {
             buffer[0..N].copy_from_slice(&self.0);
 
@@ -132,15 +129,12 @@ impl<const N: usize> CsprngArray<N> {
 
     /// Copies the contents of the buffer
     pub fn take_zeroize_on_error(mut self, buffer: &mut [u8; N]) -> MemSecurityResult<()> {
-        let buffer_len = buffer.len();
+        let found = buffer.len();
 
-        if buffer.len() != N {
+        if found != N {
             self.zeroize();
 
-            Err(crate::MemSecurityErr::InvalidArrayLength {
-                const_n_len: N,
-                buffer_len,
-            })
+            Err(crate::MemSecurityErr::InvalidArrayLength { expected: N, found })
         } else {
             buffer[0..N].copy_from_slice(&self.0);
 
