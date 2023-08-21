@@ -47,7 +47,7 @@ impl ZeroizeByte {
 
     /// Clone the array
     #[cfg(feature = "clonable_mem")]
-    pub fn clone(&self) -> ZeroizeByte {
+    pub fn clone_inner(&self) -> ZeroizeByte {
         Self(self.0)
     }
 
@@ -210,7 +210,7 @@ impl<const N: usize> ZeroizeArray<N> {
 
     /// Clone the array
     #[cfg(feature = "clonable_mem")]
-    pub fn clone(&self) -> ZeroizeArray<N> {
+    pub fn clone_inner(&self) -> ZeroizeArray<N> {
         Self(self.0)
     }
 
@@ -252,20 +252,6 @@ impl<const N: usize> ZeroizeOnDrop for ZeroizeArray<N> {}
 ///
 #[derive(BorshSerialize, BorshDeserialize)]
 pub struct ZeroizeBytesArray<const N: usize>(BytesMut);
-
-impl<const N: usize> AsRef<[u8]> for ZeroizeBytesArray<N> {
-    fn as_ref(&self) -> &[u8] {
-        self.expose_borrowed()
-    }
-}
-
-impl<const N: usize> PartialEq for ZeroizeBytesArray<N> {
-    fn eq(&self, other: &Self) -> bool {
-        blake3::hash(&self.0) == blake3::hash(&other.0)
-    }
-}
-
-impl<const N: usize> Eq for ZeroizeBytesArray<N> {}
 
 impl<const N: usize> ZeroizeBytesArray<N> {
     /// Initialize the array with an initial length of `N`
@@ -330,8 +316,28 @@ impl<const N: usize> ZeroizeBytesArray<N> {
 
     /// Clone the array
     #[cfg(feature = "clonable_mem")]
-    pub fn clone(&self) -> ZeroizeBytesArray<N> {
+    pub fn clone_inner(&self) -> ZeroizeBytesArray<N> {
         Self(self.0.clone())
+    }
+}
+
+impl<const N: usize> AsRef<[u8]> for ZeroizeBytesArray<N> {
+    fn as_ref(&self) -> &[u8] {
+        self.expose_borrowed()
+    }
+}
+
+impl<const N: usize> PartialEq for ZeroizeBytesArray<N> {
+    fn eq(&self, other: &Self) -> bool {
+        blake3::hash(&self.0) == blake3::hash(&other.0)
+    }
+}
+
+impl<const N: usize> Eq for ZeroizeBytesArray<N> {}
+
+impl<const N: usize> Default for ZeroizeBytesArray<N> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -370,20 +376,6 @@ impl<const N: usize> ZeroizeOnDrop for ZeroizeBytesArray<N> {}
 #[derive(BorshSerialize, BorshDeserialize)]
 pub struct ZeroizeBytes(BytesMut);
 
-impl AsRef<[u8]> for ZeroizeBytes {
-    fn as_ref(&self) -> &[u8] {
-        self.expose_borrowed()
-    }
-}
-
-impl PartialEq for ZeroizeBytes {
-    fn eq(&self, other: &Self) -> bool {
-        blake3::hash(&self.0) == blake3::hash(&other.0)
-    }
-}
-
-impl Eq for ZeroizeBytes {}
-
 impl ZeroizeBytes {
     /// Create a new array with no allocation and no specified capacity
     pub fn new() -> Self {
@@ -393,7 +385,7 @@ impl ZeroizeBytes {
     /// Initialize the array and set the internal value of the array to the value specified by method argument
     pub fn new_with_data(value: &[u8]) -> Self {
         let mut value_bytes = BytesMut::new();
-        value_bytes.put(&value[..]);
+        value_bytes.put(value);
 
         ZeroizeBytes(value_bytes)
     }
@@ -433,10 +425,30 @@ impl ZeroizeBytes {
 
     /// Clone the array
     #[cfg(feature = "clonable_mem")]
-    pub fn clone(&self) -> ZeroizeBytes {
+    pub fn clone_inner(&self) -> ZeroizeBytes {
         Self(self.0.clone())
     }
 }
+
+impl Default for ZeroizeBytes {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl AsRef<[u8]> for ZeroizeBytes {
+    fn as_ref(&self) -> &[u8] {
+        self.expose_borrowed()
+    }
+}
+
+impl PartialEq for ZeroizeBytes {
+    fn eq(&self, other: &Self) -> bool {
+        blake3::hash(&self.0) == blake3::hash(&other.0)
+    }
+}
+
+impl Eq for ZeroizeBytes {}
 
 impl fmt::Debug for ZeroizeBytes {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -467,37 +479,6 @@ impl ZeroizeOnDrop for ZeroizeBytes {}
 /// pub struct ZeroizeArrayVec<const N: usize, T>(ArrayVec<T, N>);
 /// ```
 pub struct ZeroizeArrayVec<const N: usize, T: fmt::Debug + ToBlake3Hash>(ArrayVec<T, N>);
-
-impl<const N: usize, T: fmt::Debug + ToBlake3Hash> PartialEq for ZeroizeArrayVec<N, T> {
-    fn eq(&self, other: &Self) -> bool {
-        for (index, value) in self.0.iter().enumerate() {
-            if value.hash() != other.0[index].hash() {
-                return false;
-            }
-        }
-
-        true
-    }
-}
-
-impl<const N: usize, T: fmt::Debug + ToBlake3Hash> fmt::Debug for ZeroizeArrayVec<N, T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut value = blake3::Hasher::new();
-        self.0.iter().for_each(|inner| {
-            value.update(inner.hash().as_bytes());
-        });
-
-        let outcome = value.finalize();
-
-        write!(
-            f,
-            "ZeroizeArrayVec<const N: usize, T: fmt::Debug + ToBlake3Hash>({:?})",
-            outcome
-        )
-    }
-}
-
-impl<const N: usize, T: fmt::Debug + ToBlake3Hash> Eq for ZeroizeArrayVec<N, T> {}
 
 impl<const N: usize, T: fmt::Debug + ToBlake3Hash> ZeroizeArrayVec<N, T>
 where
@@ -536,7 +517,7 @@ where
 
     /// Expose the internal as an owned array
     #[cfg(feature = "clonable_mem")]
-    pub fn clone(&self) -> ZeroizeArrayVec<N, T> {
+    pub fn clone_inner(&self) -> ZeroizeArrayVec<N, T> {
         Self(self.0.clone())
     }
 
@@ -560,6 +541,43 @@ where
     }
 }
 
+impl<const N: usize, T: fmt::Debug + ToBlake3Hash + Copy> Default for ZeroizeArrayVec<N, T> {
+    fn default() -> Self {
+        ZeroizeArrayVec::new()
+    }
+}
+
+impl<const N: usize, T: fmt::Debug + ToBlake3Hash> PartialEq for ZeroizeArrayVec<N, T> {
+    fn eq(&self, other: &Self) -> bool {
+        for (index, value) in self.0.iter().enumerate() {
+            if value.hash() != other.0[index].hash() {
+                return false;
+            }
+        }
+
+        true
+    }
+}
+
+impl<const N: usize, T: fmt::Debug + ToBlake3Hash> fmt::Debug for ZeroizeArrayVec<N, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut value = blake3::Hasher::new();
+        self.0.iter().for_each(|inner| {
+            value.update(inner.hash().as_bytes());
+        });
+
+        let outcome = value.finalize();
+
+        write!(
+            f,
+            "ZeroizeArrayVec<const N: usize, T: fmt::Debug + ToBlake3Hash>({:?})",
+            outcome
+        )
+    }
+}
+
+impl<const N: usize, T: fmt::Debug + ToBlake3Hash> Eq for ZeroizeArrayVec<N, T> {}
+
 impl<const N: usize, T: fmt::Debug + ToBlake3Hash> Zeroize for ZeroizeArrayVec<N, T> {
     fn zeroize(&mut self) {
         self.0.clear()
@@ -582,14 +600,6 @@ impl<const N: usize, T: fmt::Debug + ToBlake3Hash> ZeroizeOnDrop for ZeroizeArra
 /// pub struct ZeroizeArrayVecBytes<const N: usize>(ArrayVec<u8, N>);
 /// ```
 pub struct ZeroizeArrayVecBytes<const N: usize>(ArrayVec<u8, N>);
-
-impl<const N: usize> PartialEq for ZeroizeArrayVecBytes<N> {
-    fn eq(&self, other: &Self) -> bool {
-        blake3::hash(&self.0) == blake3::hash(&other.0)
-    }
-}
-
-impl<const N: usize> Eq for ZeroizeArrayVecBytes<N> {}
 
 impl<const N: usize> ZeroizeArrayVecBytes<N> {
     /// Initialize a ZeroizeArray with the value of specified by the array of bytes
@@ -625,7 +635,7 @@ impl<const N: usize> ZeroizeArrayVecBytes<N> {
 
     /// Expose the internal as an owned array
     #[cfg(feature = "clonable_mem")]
-    pub fn clone(&self) -> ZeroizeArrayVecBytes<N> {
+    pub fn clone_inner(&self) -> ZeroizeArrayVecBytes<N> {
         Self(self.0.clone())
     }
 
@@ -648,6 +658,20 @@ impl<const N: usize> ZeroizeArrayVecBytes<N> {
         self
     }
 }
+
+impl<const N: usize> Default for ZeroizeArrayVecBytes<N> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<const N: usize> PartialEq for ZeroizeArrayVecBytes<N> {
+    fn eq(&self, other: &Self) -> bool {
+        blake3::hash(&self.0) == blake3::hash(&other.0)
+    }
+}
+
+impl<const N: usize> Eq for ZeroizeArrayVecBytes<N> {}
 
 impl<const N: usize> Zeroize for ZeroizeArrayVecBytes<N> {
     fn zeroize(&mut self) {

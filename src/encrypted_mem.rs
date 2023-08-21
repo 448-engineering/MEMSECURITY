@@ -36,18 +36,6 @@ pub struct EncryptedMem {
     nonce: XNonce,
 }
 
-impl fmt::Debug for EncryptedMem {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("EncryptedMem")
-            .field(
-                "ciphertext",
-                &blake3::hash(self.ciphertext.expose_borrowed()),
-            )
-            .field("nonce", &blake3::hash(&self.nonce))
-            .finish()
-    }
-}
-
 impl EncryptedMem {
     /// Initializes a new [EncryptedMem]
     /// #### Usage
@@ -76,6 +64,24 @@ impl EncryptedMem {
     }
 }
 
+impl Default for EncryptedMem {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Debug for EncryptedMem {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("EncryptedMem")
+            .field(
+                "ciphertext",
+                &blake3::hash(self.ciphertext.expose_borrowed()),
+            )
+            .field("nonce", &blake3::hash(&self.nonce))
+            .finish()
+    }
+}
+
 /// The struct used to hold the sealing key used for encrypt data
 /// while it's loaded in memory.
 /// #### Structure
@@ -101,6 +107,7 @@ mod key_ops {
     use once_cell::sync::Lazy;
     use zeroize::{Zeroize, ZeroizeOnDrop};
 
+    #[allow(clippy::redundant_closure)]
     static SEALING_KEY: Lazy<SealingKey<DEFAULT_VAULT_PAGE_SIZE, DEFAULT_VAULT_PAGES>> =
         Lazy::new(|| SealingKey::new());
 
@@ -111,7 +118,7 @@ mod key_ops {
             let mut pages = [[0u8; VAULT_PAGE_SIZE]; VAULT_PAGES];
 
             (0..VAULT_PAGES).for_each(|vault_page_index| {
-                pages[vault_page_index] = CsprngArray::<VAULT_PAGE_SIZE>::gen().expose().clone();
+                pages[vault_page_index] = CsprngArray::<VAULT_PAGE_SIZE>::gen().expose();
             });
 
             let mut outcome = SealingKey(pages);
@@ -142,7 +149,7 @@ mod key_ops {
                 hasher.update(page);
             });
 
-            hasher.finalize().as_bytes().clone()
+            *hasher.finalize().as_bytes()
         }
 
         #[allow(unsafe_code)]
@@ -341,7 +348,7 @@ mod key_ops {
 
             let encrypted_key = self.decrypt_32byte()?;
 
-            let x25519_static_key = StaticSecret::from(encrypted_key.expose_borrowed().clone());
+            let x25519_static_key = StaticSecret::from(*encrypted_key.expose_borrowed());
 
             drop(encrypted_key);
 
@@ -355,7 +362,7 @@ mod key_ops {
 
             let encrypted_key = self.decrypt_32byte()?;
 
-            let x25519_static_key = StaticSecret::from(encrypted_key.expose_borrowed().clone());
+            let x25519_static_key = StaticSecret::from(*encrypted_key.expose_borrowed());
 
             drop(encrypted_key);
 
