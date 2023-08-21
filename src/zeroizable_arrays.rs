@@ -1,5 +1,6 @@
 use crate::{MemSecurityErr, MemSecurityResult, ToBlake3Hash};
 use arrayvec::ArrayVec;
+use borsh::{BorshDeserialize, BorshSerialize};
 use bytes::{BufMut, BytesMut};
 use core::fmt;
 use zeroize::{Zeroize, ZeroizeOnDrop};
@@ -12,7 +13,7 @@ use crate::CsprngArray;
 /// ```rust
 /// pub struct ZeroizeByte(u8);
 /// ```
-#[derive(Debug)]
+#[derive(Debug, BorshSerialize, BorshDeserialize)]
 pub struct ZeroizeByte(u8);
 
 impl ZeroizeByte {
@@ -92,6 +93,7 @@ impl ZeroizeOnDrop for ZeroizeByte {}
 /// ```rust
 /// pub struct ZeroizeArray<const N: usize>([u8; N]);
 /// ```
+#[derive(BorshSerialize, BorshDeserialize)]
 pub struct ZeroizeArray<const N: usize>([u8; N]);
 
 impl<const N: usize> AsRef<[u8]> for ZeroizeArray<N> {
@@ -248,7 +250,7 @@ impl<const N: usize> ZeroizeOnDrop for ZeroizeArray<N> {}
 /// pub struct ZeroizeBytesArray<const N: usize>(BytesMut);
 /// ```
 ///
-
+#[derive(BorshSerialize, BorshDeserialize)]
 pub struct ZeroizeBytesArray<const N: usize>(BytesMut);
 
 impl<const N: usize> AsRef<[u8]> for ZeroizeBytesArray<N> {
@@ -365,6 +367,7 @@ impl<const N: usize> ZeroizeOnDrop for ZeroizeBytesArray<N> {}
 ///
 /// pub struct ZeroizeBytes(BytesMut);
 /// ```
+#[derive(BorshSerialize, BorshDeserialize)]
 pub struct ZeroizeBytes(BytesMut);
 
 impl AsRef<[u8]> for ZeroizeBytes {

@@ -45,6 +45,16 @@ fn foo() {
 
         assert_eq!(alice_shared_secret.as_bytes(), bob_shared_secret.as_bytes())
     }
+
+    {
+        use borsh::{BorshDeserialize, BorshSerialize};
+
+        let random = CsprngArray::<32>::gen();
+        let random_bytes = random.try_to_vec().unwrap();
+        let deser_random = CsprngArray::<32>::try_from_slice(&random_bytes).unwrap();
+
+        assert_eq!(random.expose_borrowed(), deser_random.expose_borrowed())
+    }
 }
 
 #[cfg(not(all(feature = "encryption", feature = "ed25519", feature = "x25519")))]

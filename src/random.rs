@@ -1,4 +1,5 @@
 use crate::MemSecurityResult;
+use borsh::{BorshDeserialize, BorshSerialize};
 use rand_chacha::ChaCha20Rng;
 use rand_core::{RngCore, SeedableRng};
 use std::ops::{Add, Sub};
@@ -84,6 +85,7 @@ impl CsprngArraySimple {
 /// let bytes = CsprngArray::<32>::gen(); // Generates 32 random bytes
 /// assert_eq!(bytes.len(), 32);
 /// ```
+#[derive(BorshSerialize, BorshDeserialize)]
 pub struct CsprngArray<const N: usize>([u8; N]);
 
 impl<const N: usize> AsRef<[u8]> for CsprngArray<N> {
