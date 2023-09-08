@@ -48,10 +48,10 @@ fn foo() {
     }
 
     {
-        use borsh::{BorshDeserialize, BorshSerialize};
+        use borsh::{to_vec, BorshDeserialize};
 
         let random = CsprngArray::<32>::gen();
-        let random_bytes = random.try_to_vec().unwrap();
+        let random_bytes = to_vec(&random).unwrap();
         let deser_random = CsprngArray::<32>::try_from_slice(&random_bytes).unwrap();
 
         assert_eq!(random.expose_borrowed(), deser_random.expose_borrowed())
