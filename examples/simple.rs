@@ -3,7 +3,12 @@ fn main() {
     foo()
 }
 
-#[cfg(all(feature = "encryption", feature = "ed25519", feature = "x25519"))]
+#[cfg(all(
+    feature = "encryption",
+    feature = "ed25519",
+    feature = "x25519",
+    feature = "uuid"
+))]
 fn foo() {
     use memsecurity::*;
     let mut foo = EncryptedMem::new();
