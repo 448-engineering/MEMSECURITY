@@ -56,6 +56,14 @@ fn foo() {
 
         assert_eq!(random.expose_borrowed(), deser_random.expose_borrowed())
     }
+
+    {
+        let mut store = EncryptedMem::new();
+        store.encrypt_uuid().unwrap();
+
+        let decrypted = store.decrypt_uuid().unwrap();
+        assert_eq!(decrypted.expose_borrowed().len(), 16usize);
+    }
 }
 
 #[cfg(not(all(feature = "encryption", feature = "ed25519", feature = "x25519")))]

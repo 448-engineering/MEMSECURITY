@@ -9,6 +9,8 @@ use crate::{CsprngArraySimple, ZeroizeBytes};
 use chacha20poly1305::XNonce;
 use core::fmt;
 
+/// The length of a 16 byte secret key
+pub const SECRET_KEY_16BYTE: usize = 16;
 /// The length of a 32 byte secret key
 pub const SECRET_KEY_32BYTE: usize = 32;
 
@@ -289,6 +291,37 @@ mod key_ops {
             outcome
         }
 
+        /// Performs an decryption operation expecting a 16 byte array that is zeroed when dropped.
+        fn decrypt_16byte(&self) -> MemSecurityResult<ZeroizeArray<16>> {
+            let mut kek = SEALING_KEY.kek();
+            let kek_ptr = kek.as_mut_ptr();
+            SEALING_KEY.mlock_kek(kek_ptr); //TODO Handle this bool
+
+            let cipher = XChaCha12Poly1305::new(&kek.into());
+
+            let outcome =
+                match cipher.decrypt(&self.nonce, self.ciphertext.expose_borrowed().as_ref()) {
+                    Ok(plaintext) => {
+                        let plaintext_len = plaintext.len();
+                        if plaintext_len != crate::SECRET_KEY_16BYTE {
+                            return Err(MemSecurityErr::InvalidArrayLength {
+                                expected: crate::SECRET_KEY_16BYTE,
+                                found: plaintext_len,
+                            });
+                        } else {
+                            ZeroizeArray::<{ crate::SECRET_KEY_16BYTE }>::new_from_slice(&plaintext)
+                        }
+                    }
+                    Err(_) => Err(MemSecurityErr::EncryptionErr),
+                };
+
+            SEALING_KEY.munlock_kek(kek_ptr); //TODO Handle this bool
+
+            debug_assert_eq!(kek, [0u8; blake3::OUT_LEN]);
+
+            outcome
+        }
+
         /// Performs an decryption operation expecting a 32 byte array that is zeroed when dropped.
         fn decrypt_32byte(&self) -> MemSecurityResult<ZeroizeArray<32>> {
             let mut kek = SEALING_KEY.kek();
@@ -367,6 +400,23 @@ mod key_ops {
             drop(encrypted_key);
 
             Ok(PublicKey::from(&x25519_static_key))
+        }
+
+        /// Generate a new version 4 UUID and encrypt it immediately
+        #[cfg(feature = "uuid")]
+        pub fn encrypt_uuid(&mut self) -> MemSecurityResult<&mut Self> {
+            use uuid::Uuid;
+
+            let uuid_bytes = ZeroizeBytes::new_with_data(Uuid::new_v4().as_bytes());
+            self.encrypt(&uuid_bytes)?;
+
+            Ok(self)
+        }
+
+        /// Decrypt a version 4 UUID
+        #[cfg(feature = "uuid")]
+        pub fn decrypt_uuid(&mut self) -> MemSecurityResult<ZeroizeArray<16>> {
+            self.decrypt_16byte()
         }
     }
 }

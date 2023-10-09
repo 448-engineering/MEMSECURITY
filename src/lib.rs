@@ -51,6 +51,8 @@ pub use once_cell;
 pub use rand_chacha;
 #[cfg(feature = "random")]
 pub use rand_core;
+#[cfg(feature = "uuid")]
+pub use uuid;
 #[cfg(feature = "x25519")]
 pub use x25519_dalek;
 
