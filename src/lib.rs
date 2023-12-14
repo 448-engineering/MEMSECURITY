@@ -35,11 +35,14 @@ pub use traits::*;
 pub use aead;
 #[cfg(feature = "encryption")]
 pub use arrayvec;
+#[cfg(feature = "ed25519")]
+#[cfg(all(feature = "ascon", feature = "encryption"))]
+pub use ascon_aead;
 #[cfg(feature = "encryption")]
 pub use blake3;
 #[cfg(feature = "encryption")]
 pub use bytes;
-#[cfg(feature = "encryption")]
+#[cfg(all(feature = "chacha", feature = "encryption"))]
 pub use chacha20poly1305;
 #[cfg(feature = "ed25519")]
 pub use ed25519_dalek;

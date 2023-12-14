@@ -245,7 +245,9 @@ impl<const N: usize> ZeroizeOnDrop for ZeroizeArray<N> {}
 /// #### Structure
 ///
 /// ```rust
+/// #[cfg(all(feature = "chacha", feature = "encryption"))]
 /// use chacha20poly1305::aead::bytes::BytesMut;
+/// use bytes::BytesMut;
 ///
 /// pub struct ZeroizeBytesArray<const N: usize>(BytesMut);
 /// ```
@@ -369,7 +371,9 @@ impl<const N: usize> ZeroizeOnDrop for ZeroizeBytesArray<N> {}
 /// This is more similar to using a `Vec` than an `array`
 /// #### Structure
 /// ```rust
+/// #[cfg(all(feature = "chacha", feature = "encryption"))]
 /// use chacha20poly1305::aead::bytes::BytesMut;
+/// use bytes::BytesMut;
 ///
 /// pub struct ZeroizeBytes(BytesMut);
 /// ```

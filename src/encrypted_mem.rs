@@ -5,14 +5,22 @@
 //!
 //!
 #[cfg(all(feature = "symm_asymm", feature = "random"))]
-use crate::{CsprngArraySimple, ZeroizeBytes};
+use crate::{CsprngArray, ZeroizeBytes};
+#[cfg(all(feature = "chacha", feature = "encryption"))]
 use chacha20poly1305::XNonce;
 use core::fmt;
+
+#[cfg(all(feature = "ascon", feature = "encryption"))]
+type AsconNonce = ascon_aead::Nonce<ascon_aead::Ascon128>;
 
 /// The length of a 16 byte secret key
 pub const SECRET_KEY_16BYTE: usize = 16;
 /// The length of a 32 byte secret key
 pub const SECRET_KEY_32BYTE: usize = 32;
+/// The nonce length of Ascon 128 cipher
+pub const ASCON128_NONCE_LEN: usize = 16;
+/// The nonce length of XChaCha20Poly1305 cipher
+pub const CHACHA_XNONCE_LEN: usize = 24;
 
 /// The number of pages used to accommodate one page of 4KiB in size.
 pub const DEFAULT_VAULT_PAGES: usize = 4;
@@ -35,7 +43,10 @@ pub type VaultPagesLayout<const VAULT_PAGES: usize, const VAULT_PAGE_SIZE: usize
 
 pub struct EncryptedMem {
     ciphertext: ZeroizeBytes,
+    #[cfg(all(feature = "chacha", feature = "encryption"))]
     nonce: XNonce,
+    #[cfg(all(feature = "ascon", feature = "encryption"))]
+    nonce: AsconNonce,
 }
 
 impl EncryptedMem {
@@ -45,13 +56,22 @@ impl EncryptedMem {
     /// let data = EncryptedMem::new();
     /// ```
     pub fn new() -> Self {
-        let nonce = CsprngArraySimple::gen_u24_array();
+        #[cfg(all(feature = "ascon", feature = "encryption"))]
+        let nonce = CsprngArray::<ASCON128_NONCE_LEN>::gen();
+        #[cfg(all(feature = "chacha", feature = "encryption"))]
+        let nonce = CsprngArray::<CHACHA_XNONCE_LEN>::gen();
 
-        assert_ne!(nonce.expose(), [0u8; 24]);
+        #[cfg(all(feature = "chacha", feature = "encryption"))]
+        assert_ne!(nonce.expose(), [0u8; CHACHA_XNONCE_LEN]);
+        #[cfg(all(feature = "ascon", feature = "encryption"))]
+        assert_ne!(nonce.expose(), [0u8; ASCON128_NONCE_LEN]);
 
         EncryptedMem {
             ciphertext: ZeroizeBytes::new(),
-            nonce: nonce.expose().into(),
+            #[cfg(all(feature = "ascon", feature = "encryption"))]
+            nonce: *AsconNonce::from_slice(nonce.expose().as_ref()),
+            #[cfg(all(feature = "chacha", feature = "encryption"))]
+            nonce: *XNonce::from_slice(nonce.expose().as_ref()),
         }
     }
 
@@ -61,7 +81,14 @@ impl EncryptedMem {
     }
 
     /// Expose Nonce
+    #[cfg(all(feature = "chacha", feature = "encryption"))]
     pub fn nonce(&self) -> &XNonce {
+        &self.nonce
+    }
+
+    /// Expose Nonce
+    #[cfg(all(feature = "ascon", feature = "encryption"))]
+    pub fn nonce(&self) -> &AsconNonce {
         &self.nonce
     }
 }
@@ -102,6 +129,7 @@ mod key_ops {
         CsprngArray, EncryptedMem, MemSecurityErr, MemSecurityResult, ZeroizeArray, ZeroizeBytes,
         DEFAULT_VAULT_PAGES, DEFAULT_VAULT_PAGE_SIZE,
     };
+    #[cfg(all(feature = "chacha", feature = "encryption"))]
     use chacha20poly1305::{
         aead::{Aead, KeyInit},
         XChaCha12Poly1305,
@@ -201,6 +229,15 @@ mod key_ops {
             let kek_ptr = kek.as_mut_ptr();
             SEALING_KEY.mlock_kek(kek_ptr); //TODO Handle this bool
 
+            #[cfg(all(feature = "ascon", feature = "encryption"))]
+            use ascon_aead::{
+                aead::{Aead, KeyInit},
+                Ascon128a,
+            };
+            #[cfg(all(feature = "ascon", feature = "encryption"))]
+            let cipher = Ascon128a::new(kek[0..16].as_ref().into());
+
+            #[cfg(all(feature = "chacha", feature = "encryption"))]
             let cipher = XChaCha12Poly1305::new(&kek.into());
 
             let outcome = match cipher.encrypt(&self.nonce, plaintext.as_ref()) {
@@ -223,7 +260,16 @@ mod key_ops {
             let kek_ptr = kek.as_mut_ptr();
             SEALING_KEY.mlock_kek(kek_ptr); //TODO Handle this bool
 
+            #[cfg(all(feature = "chacha", feature = "encryption"))]
             let cipher = XChaCha12Poly1305::new(&kek.into());
+
+            #[cfg(all(feature = "ascon", feature = "encryption"))]
+            use ascon_aead::{
+                aead::{Aead, KeyInit},
+                Ascon128a,
+            };
+            #[cfg(all(feature = "ascon", feature = "encryption"))]
+            let cipher = Ascon128a::new(kek[0..16].as_ref().into());
 
             let outcome =
                 match cipher.decrypt(&self.nonce, self.ciphertext.expose_borrowed().as_ref()) {
@@ -297,7 +343,16 @@ mod key_ops {
             let kek_ptr = kek.as_mut_ptr();
             SEALING_KEY.mlock_kek(kek_ptr); //TODO Handle this bool
 
+            #[cfg(all(feature = "chacha", feature = "encryption"))]
             let cipher = XChaCha12Poly1305::new(&kek.into());
+
+            #[cfg(all(feature = "ascon", feature = "encryption"))]
+            use ascon_aead::{
+                aead::{Aead, KeyInit},
+                Ascon128a,
+            };
+            #[cfg(all(feature = "ascon", feature = "encryption"))]
+            let cipher = Ascon128a::new(kek[0..16].as_ref().into());
 
             let outcome =
                 match cipher.decrypt(&self.nonce, self.ciphertext.expose_borrowed().as_ref()) {
@@ -328,7 +383,16 @@ mod key_ops {
             let kek_ptr = kek.as_mut_ptr();
             SEALING_KEY.mlock_kek(kek_ptr); //TODO Handle this bool
 
+            #[cfg(all(feature = "chacha", feature = "encryption"))]
             let cipher = XChaCha12Poly1305::new(&kek.into());
+
+            #[cfg(all(feature = "ascon", feature = "encryption"))]
+            use ascon_aead::{
+                aead::{Aead, KeyInit},
+                Ascon128a,
+            };
+            #[cfg(all(feature = "ascon", feature = "encryption"))]
+            let cipher = Ascon128a::new(kek[0..16].as_ref().into());
 
             let outcome =
                 match cipher.decrypt(&self.nonce, self.ciphertext.expose_borrowed().as_ref()) {

@@ -5,6 +5,7 @@ fn main() {
 
 #[cfg(all(
     feature = "encryption",
+    feature = "ascon",
     feature = "ed25519",
     feature = "x25519",
     feature = "uuid"

@@ -13,6 +13,10 @@ However, this implementation derives a sealing key from a large area of memory c
 This crate has not received an audit. Use at your own risk!!!
 
 #### Features
+- **`full_with_ascon`** - this feature enables encryption with  **Ascon128a cipher** and all other features except `chacha`
+- **`full_with_chacha`** - this feature enables encryption with **XChaCha12Poly1305 cipher** and all other features except `ascon`
+- **`full_with_ascon`** feature enables encryption with **Ascon128a cipher** and it must be used together with the `encryption` feature
+- **`chacha`**  feature enables encryption with **XChaCha12Poly1305 cipher** and it must be used together with the `encryption` feature
 - **`symm_asymm`** - feature enables data types that can be used to securely zero out memory when they are dropped. They implement `Zeroize` trait from `zeroize` crate.
 - **`clonable_mem`** - Allows the cloning of data types enabled by the `symm_asymm`  features.
 - **`encryption`** - This enables encrypted memory with `mlock` and `munlock`.
@@ -85,7 +89,7 @@ This crate has not received an audit. Use at your own risk!!!
 
     // Initialize the struct with a random nonce (XNonce for XChaCha12Poly1305)
     let mut foo = EncryptedMem::new();
-    
+
     // Here a some random bytes are generated to simulate
     // some secret you want to protect.
     // Here the value must implement `Zeroize` trait
