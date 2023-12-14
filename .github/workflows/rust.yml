@@ -28,8 +28,10 @@ jobs:
       run: cargo build --no-default-features --features random --verbose
     - name: Run build with `clonable_mem` feature enabled
       run: cargo build --no-default-features --features clonable_mem --verbose
-    - name: Run build with `encryption` feature enabled
-      run: cargo build --no-default-features --features encryption --verbose
+    - name: Run build with `encryption` and `ascon` feature enabled
+      run: cargo build --no-default-features --features "encryption ascon" --verbose
+    - name: Run build with `encryption` and `chacha` feature enabled
+      run: cargo build --no-default-features --features "encryption chacha" --verbose
     - name: Run build with `symm_asymm` feature enabled
       run: cargo build --no-default-features --features symm_asymm --verbose
     - name: Run build with `full` feature enabled
@@ -61,8 +63,10 @@ jobs:
       run: cargo build --no-default-features --features random --verbose
     - name: Run build with `clonable_mem` feature enabled
       run: cargo build --no-default-features --features clonable_mem --verbose
-    - name: Run build with `encryption` feature enabled
-      run: cargo build --no-default-features --features encryption --verbose
+    - name: Run build with `encryption` and `ascon` feature enabled
+      run: cargo build --no-default-features --features "encryption ascon" --verbose
+    - name: Run build with `encryption` and `chacha` feature enabled
+      run: cargo build --no-default-features --features "encryption chacha" --verbose
     - name: Run build with `symm_asymm` feature enabled
       run: cargo build --no-default-features --features symm_asymm --verbose
     - name: Run build with `full` feature enabled
@@ -94,8 +98,10 @@ jobs:
       run: cargo build --no-default-features --features random --verbose
     - name: Run build with `clonable_mem` feature enabled
       run: cargo build --no-default-features --features clonable_mem --verbose
-    - name: Run build with `encryption` feature enabled
-      run: cargo build --no-default-features --features encryption --verbose
+    - name: Run build with `encryption` and `ascon` feature enabled
+      run: cargo build --no-default-features --features "encryption ascon" --verbose
+    - name: Run build with `encryption` and `chacha` feature enabled
+      run: cargo build --no-default-features --features "encryption chacha" --verbose
     - name: Run build with `symm_asymm` feature enabled
       run: cargo build --no-default-features --features symm_asymm --verbose
     - name: Run build with `full` feature enabled
