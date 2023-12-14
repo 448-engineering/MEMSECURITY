@@ -5,7 +5,6 @@ fn main() {
 
 #[cfg(all(
     feature = "encryption",
-    feature = "ascon",
     feature = "ed25519",
     feature = "x25519",
     feature = "uuid"
@@ -70,15 +69,4 @@ fn foo() {
         let decrypted = store.decrypt_uuid().unwrap();
         assert_eq!(decrypted.expose_borrowed().len(), 16usize);
     }
-}
-
-#[cfg(not(all(
-    feature = "encryption",
-    feature = "ascon",
-    feature = "ed25519",
-    feature = "x25519",
-    feature = "uuid"
-)))]
-fn foo() {
-    panic!("RUN THIS EXAMPLE WITH `cargo run --example simple --features \"encryption ed25519 x25519\"`")
 }

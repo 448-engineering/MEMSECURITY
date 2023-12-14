@@ -13,13 +13,9 @@ However, this implementation derives a sealing key from a large area of memory c
 This crate has not received an audit. Use at your own risk!!!
 
 #### Features
-- **`full_with_ascon`** - this feature enables encryption with  **Ascon128a cipher** and all other features except `chacha`
-- **`full_with_chacha`** - this feature enables encryption with **XChaCha12Poly1305 cipher** and all other features except `ascon`
-- **`full_with_ascon`** feature enables encryption with **Ascon128a cipher** and it must be used together with the `encryption` feature
-- **`chacha`**  feature enables encryption with **XChaCha12Poly1305 cipher** and it must be used together with the `encryption` feature
 - **`symm_asymm`** - feature enables data types that can be used to securely zero out memory when they are dropped. They implement `Zeroize` trait from `zeroize` crate.
 - **`clonable_mem`** - Allows the cloning of data types enabled by the `symm_asymm`  features.
-- **`encryption`** - This enables encrypted memory with `mlock` and `munlock`.
+- **`encryption`** - This enables encrypted memory with `mlock` and `munlock` and encrypts using Ascon128a cipher.
 - **`random`** - This enables cryptographically secure random number generator which use `rand_core` and `rand_chacha`.
 
 
@@ -81,13 +77,13 @@ This crate has not received an audit. Use at your own risk!!!
     // Use the value
     vector_like.expose_borrowed();
     ```
-3. ###### Encrypt a secret while in memory using XChaCha12Poly1305 encryption
+3. ###### Encrypt a secret while in memory using Ascon128a encryption
     Whenever you want to encrypt secrets like passwords or encryption keys in memory, enable the `encryption` feature to use the `EncryptedMem` type. `mlock` and `munlock` are also implemented in this data.
     The encryption key is generated afresh on each app run
     ```rust
     use memsecurity::{EncryptedMem, CsprngArray};
 
-    // Initialize the struct with a random nonce (XNonce for XChaCha12Poly1305)
+    // Initialize the struct with a random nonce (Nonce for Ascon128a)
     let mut foo = EncryptedMem::new();
 
     // Here a some random bytes are generated to simulate

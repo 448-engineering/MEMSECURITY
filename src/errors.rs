@@ -4,10 +4,10 @@ pub type MemSecurityResult<T> = Result<T, MemSecurityErr>;
 /// Errors encountered in execution of the code in this crate
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub enum MemSecurityErr {
-    /// An error was encountered while encrypting the data
+    /// An error was encountered while encrypting the data using Ascon128a  
     #[cfg(feature = "encryption")]
     EncryptionErr,
-    /// An error was encountered when decrypting data using XChaCha12Poly1305    
+    /// An error was encountered when decrypting data using Ascon128a    
     #[cfg(feature = "encryption")]
     DecryptionError,
     /// The length of the arrays should be the same
