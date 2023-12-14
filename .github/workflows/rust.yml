@@ -20,8 +20,10 @@ jobs:
       run: cargo build
     - name: Build with all features
       run: cargo build --all-features
-    - name: Run clippy
-      run: cargo clippy --all-targets --all-features -- -D warnings
+    - name: Run clippy for `chacha`
+      run: cargo clippy --all-targets --no-default-features --features full_with_chacha -- -D warnings
+    - name: Run clippy for `ascon`
+      run: cargo clippy --all-targets -- -D warnings
     - name: Run build with `random` feature enabled
       run: cargo build --no-default-features --features random --verbose
     - name: Run build with `clonable_mem` feature enabled

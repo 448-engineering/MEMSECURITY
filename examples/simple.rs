@@ -72,7 +72,13 @@ fn foo() {
     }
 }
 
-#[cfg(not(all(feature = "encryption", feature = "ed25519", feature = "x25519")))]
+#[cfg(not(all(
+    feature = "encryption",
+    feature = "ascon",
+    feature = "ed25519",
+    feature = "x25519",
+    feature = "uuid"
+)))]
 fn foo() {
     panic!("RUN THIS EXAMPLE WITH `cargo run --example simple --features \"encryption ed25519 x25519\"`")
 }
