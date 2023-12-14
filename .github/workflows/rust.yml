@@ -19,7 +19,7 @@ jobs:
     - name: Build
       run: cargo build
     - name: Build with all features
-      run: cargo build --no-default-features --features chacha
+      run: cargo build --no-default-features --features "encryption chacha"
     - name: Run clippy for `chacha`
       run: cargo clippy --all-targets --no-default-features --features full_with_chacha -- -D warnings
     - name: Run clippy for `ascon`
@@ -37,7 +37,7 @@ jobs:
     - name: Run tests with `ascon` feature
       run: cargo test --verbose
     - name: Run tests with `chacha` feature
-      run: cargo test --no-default-features --features chacha --verbose
+      run: cargo test --no-default-features --features "encryption chacha" --verbose
 
     - name: Install cargo-deny
       run: cargo install cargo-deny
@@ -56,7 +56,7 @@ jobs:
     - name: Build
       run: cargo build
     - name: Build with all features
-      run: cargo build --no-default-features --features chacha
+      run: cargo build --no-default-features --features "encryption chacha"
     - name: Run build with `random` feature enabled
       run: cargo build --no-default-features --features random --verbose
     - name: Run build with `clonable_mem` feature enabled
@@ -70,7 +70,7 @@ jobs:
     - name: Run tests with `ascon` feature
       run: cargo test --verbose
     - name: Run tests with `chacha` feature
-      run: cargo test --no-default-features --features chacha --verbose
+      run: cargo test --no-default-features --features "encryption chacha" --verbose
 
     - name: Install cargo-deny
       run: cargo install cargo-deny
@@ -89,7 +89,7 @@ jobs:
     - name: Build
       run: cargo build
     - name: Build with all features
-      run: cargo build --no-default-features --features chacha
+      run: cargo build --no-default-features --features "encryption chacha"
     - name: Run build with `random` feature enabled
       run: cargo build --no-default-features --features random --verbose
     - name: Run build with `clonable_mem` feature enabled
@@ -103,7 +103,7 @@ jobs:
     - name: Run tests with `ascon` feature
       run: cargo test --verbose
     - name: Run tests with `chacha` feature
-      run: cargo test --no-default-features --features chacha --verbose
+      run: cargo test --no-default-features --features "encryption chacha" --verbose
 
     - name: Install cargo-deny
       run: cargo install cargo-deny
