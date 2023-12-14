@@ -58,6 +58,15 @@ x25519 = ["dep:x25519-dalek"]
 symm_asymm = ["dep:bytes", "dep:arrayvec", "dep:blake3"]
 clonable_mem = []
 uuid = ["dep:uuid"]
+full = [
+    "encryption",
+    "random",
+    "ed25519",
+    "x25519",
+    "symm_asymm",
+    "clonable_mem",
+    "uuid",
+]
 
 [profile.dev]
 overflow-checks = true
