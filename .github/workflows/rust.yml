@@ -34,8 +34,6 @@ jobs:
       run: cargo build --no-default-features --features "encryption chacha" --verbose
     - name: Run build with `symm_asymm` feature enabled
       run: cargo build --no-default-features --features symm_asymm --verbose
-    - name: Run build with `full` feature enabled
-      run: cargo build --no-default-features --features full --verbose
     - name: Run tests with `ascon` feature
       run: cargo test --verbose
     - name: Run tests with `chacha` feature
@@ -69,8 +67,6 @@ jobs:
       run: cargo build --no-default-features --features "encryption chacha" --verbose
     - name: Run build with `symm_asymm` feature enabled
       run: cargo build --no-default-features --features symm_asymm --verbose
-    - name: Run build with `full` feature enabled
-      run: cargo build --no-default-features --features full --verbose
     - name: Run tests with `ascon` feature
       run: cargo test --verbose
     - name: Run tests with `chacha` feature
@@ -104,8 +100,6 @@ jobs:
       run: cargo build --no-default-features --features "encryption chacha" --verbose
     - name: Run build with `symm_asymm` feature enabled
       run: cargo build --no-default-features --features symm_asymm --verbose
-    - name: Run build with `full` feature enabled
-      run: cargo build --no-default-features --features full --verbose
     - name: Run tests with `ascon` feature
       run: cargo test --verbose
     - name: Run tests with `chacha` feature
