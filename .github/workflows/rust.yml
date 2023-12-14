@@ -19,7 +19,7 @@ jobs:
     - name: Build
       run: cargo build
     - name: Build with all features
-      run: cargo build --all-features
+      run: cargo build --no-default-features --features chacha
     - name: Run clippy for `chacha`
       run: cargo clippy --all-targets --no-default-features --features full_with_chacha -- -D warnings
     - name: Run clippy for `ascon`
@@ -34,19 +34,15 @@ jobs:
       run: cargo build --no-default-features --features symm_asymm --verbose
     - name: Run build with `full` feature enabled
       run: cargo build --no-default-features --features full --verbose
-    - name: Run tests with all features
-      run: cargo test --all-features --verbose
+    - name: Run tests with `ascon` feature
+      run: cargo test --verbose
+    - name: Run tests with `chacha` feature
+      run: cargo test --no-default-features --features chacha --verbose
 
     - name: Install cargo-deny
       run: cargo install cargo-deny
     - name: Check licenses are correct
       run: cargo deny check licenses
-
-    - name: Run `simple.rs` example with no default features
-      run: cargo run --example simple --no-default-features --features "encryption ed25519 x25519 uuid"
-
-    - name: Run `simple.rs` example with features set to `full`
-      run: cargo run --example simple --no-default-features --features full
 
     - name: Run `simple.rs` example with default features
       run: cargo run --example simple
@@ -60,7 +56,7 @@ jobs:
     - name: Build
       run: cargo build
     - name: Build with all features
-      run: cargo build --all-features
+      run: cargo build --no-default-features --features chacha
     - name: Run build with `random` feature enabled
       run: cargo build --no-default-features --features random --verbose
     - name: Run build with `clonable_mem` feature enabled
@@ -71,19 +67,15 @@ jobs:
       run: cargo build --no-default-features --features symm_asymm --verbose
     - name: Run build with `full` feature enabled
       run: cargo build --no-default-features --features full --verbose
-    - name: Run tests with all features
-      run: cargo test --all-features --verbose
+    - name: Run tests with `ascon` feature
+      run: cargo test --verbose
+    - name: Run tests with `chacha` feature
+      run: cargo test --no-default-features --features chacha --verbose
 
     - name: Install cargo-deny
       run: cargo install cargo-deny
     - name: Check licenses are correct
       run: cargo deny check licenses
-
-    - name: Run `simple.rs` example with no default features
-      run: cargo run --example simple --no-default-features --features "encryption ed25519 x25519 uuid"
-
-    - name: Run `simple.rs` example with features set to `full`
-      run: cargo run --example simple --no-default-features --features full
 
     - name: Run `simple.rs` example with default features
       run: cargo run --example simple
@@ -97,7 +89,7 @@ jobs:
     - name: Build
       run: cargo build
     - name: Build with all features
-      run: cargo build --all-features
+      run: cargo build --no-default-features --features chacha
     - name: Run build with `random` feature enabled
       run: cargo build --no-default-features --features random --verbose
     - name: Run build with `clonable_mem` feature enabled
@@ -108,19 +100,16 @@ jobs:
       run: cargo build --no-default-features --features symm_asymm --verbose
     - name: Run build with `full` feature enabled
       run: cargo build --no-default-features --features full --verbose
-    - name: Run tests with all features
-      run: cargo test --all-features --verbose
+    - name: Run tests with `ascon` feature
+      run: cargo test --verbose
+    - name: Run tests with `chacha` feature
+      run: cargo test --no-default-features --features chacha --verbose
 
     - name: Install cargo-deny
       run: cargo install cargo-deny
     - name: Check licenses are correct
       run: cargo deny check licenses
 
-    - name: Run `simple.rs` example with no default features
-      run: cargo run --example simple --no-default-features --features "encryption ed25519 x25519 uuid"
-
-    - name: Run `simple.rs` example with features set to `full`
-      run: cargo run --example simple --no-default-features --features full
 
     - name: Run `simple.rs` example with default features
       run: cargo run --example simple
