@@ -33,7 +33,6 @@ pub use traits::*;
 /// Re-export  crates
 #[cfg(feature = "encryption")]
 pub use arrayvec;
-#[cfg(feature = "ed25519")]
 #[cfg(feature = "encryption")]
 pub use ascon_aead;
 #[cfg(feature = "encryption")]
