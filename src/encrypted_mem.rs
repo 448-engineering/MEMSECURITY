@@ -1,9 +1,8 @@
 //! This module contains types and methods used to create a sealing key that stretches across multiple
 //! memory pages ensuring impossible key recovery if certain attacks are used to try and recover the key.
 //! These attacks are specified in the crate documentation.
-//!
-//!
-//!
+///
+
 #[cfg(all(feature = "symm_asymm", feature = "random"))]
 use crate::{CsprngArray, ZeroizeBytes};
 use ascon_aead::Ascon128a;
@@ -84,7 +83,7 @@ impl fmt::Debug for EncryptedMem {
                 "ciphertext",
                 &blake3::hash(self.ciphertext.expose_borrowed()),
             )
-            .field("nonce", &blake3::hash(&self.nonce.as_ref()))
+            .field("nonce", &blake3::hash(self.nonce.as_ref()))
             .finish()
     }
 }

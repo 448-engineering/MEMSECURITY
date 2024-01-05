@@ -249,7 +249,6 @@ impl<const N: usize> ZeroizeOnDrop for ZeroizeArray<N> {}
 ///
 /// pub struct ZeroizeBytesArray<const N: usize>(BytesMut);
 /// ```
-///
 #[derive(BorshSerialize, BorshDeserialize)]
 pub struct ZeroizeBytesArray<const N: usize>(BytesMut);
 
