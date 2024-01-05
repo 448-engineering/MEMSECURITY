@@ -84,7 +84,7 @@ impl fmt::Debug for EncryptedMem {
                 "ciphertext",
                 &blake3::hash(self.ciphertext.expose_borrowed()),
             )
-            .field("nonce", &blake3::hash(&self.nonce))
+            .field("nonce", &blake3::hash(&self.nonce.as_ref()))
             .finish()
     }
 }
@@ -297,7 +297,7 @@ mod key_ops {
         }
 
         /// Performs an decryption operation expecting a 16 byte array that is zeroed when dropped.
-        fn decrypt_16byte(&self) -> MemSecurityResult<ZeroizeArray<16>> {
+        pub fn decrypt_16byte(&self) -> MemSecurityResult<ZeroizeArray<16>> {
             let mut kek = SEALING_KEY.kek();
             let kek_ptr = kek.as_mut_ptr();
             SEALING_KEY.mlock_kek(kek_ptr); //TODO Handle this bool
@@ -328,7 +328,7 @@ mod key_ops {
         }
 
         /// Performs an decryption operation expecting a 32 byte array that is zeroed when dropped.
-        fn decrypt_32byte(&self) -> MemSecurityResult<ZeroizeArray<32>> {
+        pub fn decrypt_32byte(&self) -> MemSecurityResult<ZeroizeArray<32>> {
             let mut kek = SEALING_KEY.kek();
             let kek_ptr = kek.as_mut_ptr();
             SEALING_KEY.mlock_kek(kek_ptr); //TODO Handle this bool
